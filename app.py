@@ -20,7 +20,7 @@ def load_data():
 # 画面設定
 st.set_page_config(page_title="5.5スロ収支管理", layout="wide")
 
-# --- デザイン修正：記録するボタンを青背景・白文字に強制固定 ---
+# --- デザイン修正：ボタンの配色を強制的に固定 ---
 st.markdown(
     """
     <style>
@@ -36,17 +36,17 @@ st.markdown(
         color: #000000 !important;
     }
 
-    /* 【ここを修正】記録するボタン：背景を青、文字を白に強制 */
-    div.stButton > button:first-child {
-        background-color: #0000ff !important; /* 青色 */
-        color: #ffffff !important;         /* 白色 */
-        -webkit-text-fill-color: #ffffff !important;
+    /* 【ここを徹底修正】フォーム内の送信ボタン（記録するボタン） */
+    div.stForm [data-testid="stFormSubmitButton"] button {
+        background-color: #0000ff !important; /* 背景：青 */
+        color: #ffffff !important;            /* 文字：白 */
+        -webkit-text-fill-color: #ffffff !important; /* iPhone用文字色 */
         border: none !important;
-        font-weight: bold !important;
         width: 100% !important;
+        font-weight: bold !important;
     }
 
-    /* 削除ボタン：赤枠デザインを維持 */
+    /* 削除ボタン：赤枠デザイン */
     div.stButton > button[kind="secondary"] {
         background-color: #000000 !important;
         color: #ff4b4b !important;
@@ -84,7 +84,7 @@ with st.form("input_form", clear_on_submit=True):
     with col3: toushi = st.number_input("投資額(円)", min_value=0, step=500)
     with col4: maisuu = st.number_input("回収枚数(枚)", min_value=0, step=10)
     
-    # このボタンの色を青背景・白文字にしました
+    # フォーム内のボタン
     submitted = st.form_submit_button("記録する")
     
     if submitted:
