@@ -20,35 +20,30 @@ def load_data():
 # 画面設定
 st.set_page_config(page_title="5.5スロ収支", layout="wide")
 
-# --- 【ご要望どおりの配色】背景は黒、入力枠内は白、文字は黒 ---
+# --- デザイン設定 ---
 st.markdown(
     """
     <style>
-    /* 全体の背景は真っ黒 */
+    /* 背景は黒 */
     .stApp, [data-testid="stSidebar"] {
         background-color: #000000 !important;
         color: #ffffff !important;
     }
     
-    /* 入力枠の中を白、入力文字を黒に固定 */
-    input, select, textarea, div[data-baseweb="input"], div[data-baseweb="select"] {
+    /* 入力枠内と「記録する」ボタンを白、文字を黒にする */
+    input, select, textarea, div[data-baseweb="input"], div[data-baseweb="select"], .stButton>button {
         background-color: #ffffff !important;
         color: #000000 !important;
         -webkit-text-fill-color: #000000 !important; /* iPhone用 */
+        border: none !important;
     }
 
-    /* ラベル（「機種名」などの項目名）は白で見やすく */
+    /* ラベル（項目名）は白 */
     label, [data-testid="stWidgetLabel"] p {
         color: #ffffff !important;
     }
 
-    /* ボタンのスタイル */
-    .stButton>button {
-        background-color: #333333 !important;
-        color: #ffffff !important;
-    }
-
-    /* 削除ボタン（赤枠） */
+    /* 削除ボタンのみ赤枠のデザインを維持 */
     div.stButton > button[kind="secondary"] {
         background-color: #1a0000 !important;
         color: #ff4b4b !important;
@@ -104,9 +99,12 @@ if not df.empty:
     with col_left:
         st.write("### 📅 月別収支")
         def get_month(x):
-            if '/' in x: return x.split('/') + "月"
-            if len(x) >= 2: return x[:2] + "月"
+            if '/' in x:
+                return str(x.split('/')[0]) + "月"
+            if len(x) >= 2:
+                return str(x[:2]) + "月"
             return "不明"
+        
         df['月'] = df['日付'].apply(get_month)
         monthly = df.groupby('月', sort=False)['収支'].sum()
         st.bar_chart(monthly)
@@ -120,7 +118,7 @@ if not df.empty:
     st.divider()
     st.write("### 📝 履歴の管理")
     for i, row in df.iloc[::-1].iterrows():
-        c1, c2, c3, c4 = st.columns() 
+        c1, c2, c3, c4 = st.columns(4) 
         c1.write(row['日付'])
         c2.write(row['機種名'])
         c3.write(f"{row['収支']}円")
