@@ -7,6 +7,7 @@ from datetime import datetime
 FILENAME = 'shuushi_data.csv'
 SLOT_TANKA = 5.5
 
+# データの読み込み関数
 def load_data():
     if os.path.exists(FILENAME):
         try:
@@ -17,7 +18,36 @@ def load_data():
         return df
     return pd.DataFrame(columns=['日付', '機種名', '投資', '回収枚数', '収支'])
 
+# 画面設定
 st.set_page_config(page_title="5.5スロ収支", layout="wide")
+
+# --- 背景を黒・文字を白に固定するデザイン設定 ---
+st.markdown(
+    """
+    <style>
+    /* 全体の背景色と文字色 */
+    .stApp {
+        background-color: #000000;
+        color: #ffffff;
+    }
+    /* 入力欄やボタンの見た目調整 */
+    input, select, textarea {
+        color: #ffffff !important;
+    }
+    .stButton>button {
+        background-color: #333333;
+        color: #ffffff;
+        border-radius: 5px;
+    }
+    /* 履歴の削除ボタンを赤っぽく */
+    button[kind="secondary"] {
+        color: #ff4b4b !important;
+        border-color: #ff4b4b !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # --- サイドバー：確率計算機 ---
 with st.sidebar:
@@ -25,6 +55,7 @@ with st.sidebar:
     kaiten = st.number_input("総回転数", min_value=1, value=1000)
     big = st.number_input("BIG回数", min_value=0)
     reg = st.number_input("REG回数", min_value=0)
+    st.divider()
     if big > 0: st.write(f"BIG確率: **1/{kaiten/big:.1f}**")
     if reg > 0: st.write(f"REG確率: **1/{kaiten/reg:.1f}**")
     if (big + reg) > 0: st.info(f"合成確率: **1/{kaiten/(big+reg):.1f}**")
@@ -55,7 +86,10 @@ df = load_data()
 
 if not df.empty:
     st.divider()
-    st.metric("累計トータル収支", f"{df['収支'].sum()} 円")
+    # 累計収支を大きく表示
+    total = df['収支'].sum()
+    color = "#ff4b4b" if total < 0 else "#00ff00"
+    st.markdown(f"### 累計トータル収支: <span style='color:{color}; font-size:32px;'>{total} 円</span>", unsafe_allow_html=True)
 
     col_left, col_right = st.columns(2)
     with col_left:
@@ -74,23 +108,19 @@ if not df.empty:
         summary['平均'] = summary['平均'].astype(int)
         st.table(summary)
 
-    # --- 修正・削除機能 (アップデート版) ---
+    # --- 履歴管理（削除ボタン付き） ---
     st.divider()
     st.write("### 📝 履歴の管理")
     
-    # 1行ずつ削除ボタンを配置
-    for i, row in df.iterrows():
-        cols = st.columns([1, 2, 1, 1, 1]) # 幅の調整
-        cols[0].write(row['日付'])
-        cols[1].write(row['機種名'])
-        cols[2].write(f"{row['収支']}円")
-        
-        # 削除ボタン
-        if cols[4].button("削除", key=f"del_{i}"):
+    # 最新のデータが上にくるように逆順で表示
+    for i, row in df.iloc[::-1].iterrows():
+        c1, c2, c3, c4 = st.columns([1, 2, 1, 1])
+        c1.write(row['日付'])
+        c2.write(row['機種名'])
+        c3.write(f"{row['収支']}円")
+        if c4.button("削除", key=f"del_{i}"):
             df = df.drop(i)
             df.to_csv(FILENAME, index=False, encoding='utf-8-sig')
-            st.success(f"{row['機種名']} のデータを削除しました")
             st.rerun()
-
 else:
     st.info("データがありません。")
