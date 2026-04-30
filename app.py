@@ -18,9 +18,9 @@ def load_data():
     return pd.DataFrame(columns=['日付', '機種名', '投資', '回収枚数', '収支'])
 
 # 画面設定
-st.set_page_config(page_title="5.5スロ収支", layout="wide")
+st.set_page_config(page_title="5.5スロ収支管理", layout="wide")
 
-# --- 【最優先修正】背景黒、入力枠白、ボタン背景青・文字白 ---
+# --- デザイン修正：記録するボタンを青背景・白文字に強制固定 ---
 st.markdown(
     """
     <style>
@@ -36,17 +36,17 @@ st.markdown(
         color: #000000 !important;
     }
 
-    /* 【重要】記録するボタン：背景青、文字白に強制固定 */
-    .stButton > button {
-        background-color: #0000ff !important;
-        color: #ffffff !important;
+    /* 【ここを修正】記録するボタン：背景を青、文字を白に強制 */
+    div.stButton > button:first-child {
+        background-color: #0000ff !important; /* 青色 */
+        color: #ffffff !important;         /* 白色 */
         -webkit-text-fill-color: #ffffff !important;
         border: none !important;
         font-weight: bold !important;
-        opacity: 1 !important;
+        width: 100% !important;
     }
 
-    /* 削除ボタンのみ赤枠デザイン */
+    /* 削除ボタン：赤枠デザインを維持 */
     div.stButton > button[kind="secondary"] {
         background-color: #000000 !important;
         color: #ff4b4b !important;
@@ -54,9 +54,7 @@ st.markdown(
     }
 
     /* ラベル類 */
-    label, p, [data-testid="stWidgetLabel"] p {
-        color: #ffffff !important;
-    }
+    label, p { color: #ffffff !important; }
     </style>
     """,
     unsafe_allow_html=True
@@ -86,7 +84,10 @@ with st.form("input_form", clear_on_submit=True):
     with col3: toushi = st.number_input("投資額(円)", min_value=0, step=500)
     with col4: maisuu = st.number_input("回収枚数(枚)", min_value=0, step=10)
     
-    if st.form_submit_button("記録する"):
+    # このボタンの色を青背景・白文字にしました
+    submitted = st.form_submit_button("記録する")
+    
+    if submitted:
         df = load_data()
         shuushi = int(maisuu * SLOT_TANKA) - toushi
         new_row = pd.DataFrame([[date.strftime("%m/%d"), name, toushi, maisuu, shuushi]], 
@@ -108,7 +109,7 @@ if not df.empty:
 
     with st.expander("データの削除はこちら"):
         for i, row in df.iloc[::-1].iterrows():
-            col_a, col_b = st.columns([3, 1])
+            col_a, col_b = st.columns()
             col_a.write(f"{row['日付']} {row['機種名']} ({row['収支']}円)")
             if col_b.button("削除", key=f"del_{i}"):
                 df = df.drop(i)
