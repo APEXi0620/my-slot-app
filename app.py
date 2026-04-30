@@ -20,7 +20,7 @@ def load_data():
 # 画面設定
 st.set_page_config(page_title="5.5スロ収支", layout="wide")
 
-# --- デザイン設定：背景黒、入力枠白、ボタン文字白 ---
+# --- デザイン設定：背景黒、入力枠白、ボタン青背景・白文字 ---
 st.markdown(
     """
     <style>
@@ -38,11 +38,12 @@ st.markdown(
         border: none !important;
     }
 
-    /* 【修正】記録するボタン：背景を黒、文字色を「白」に固定 */
+    /* 【修正】記録するボタン：背景を青、文字色を白に設定 */
     .stButton>button {
-        background-color: #000000 !important;
+        background-color: #0000ff !important;
         color: #ffffff !important;
-        border: 1px solid #ffffff !important; /* 枠線を白にして場所を明確に */
+        -webkit-text-fill-color: #ffffff !important;
+        border: none !important;
     }
 
     /* ラベル（項目名）は白 */
