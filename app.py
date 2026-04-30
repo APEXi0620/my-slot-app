@@ -20,7 +20,7 @@ def load_data():
 # 画面設定
 st.set_page_config(page_title="5.5スロ収支管理", layout="wide")
 
-# --- デザイン修正：ボタンの配色を強制的に固定 ---
+# --- デザイン修正：記録するボタンを青背景・白文字に強制固定 ---
 st.markdown(
     """
     <style>
@@ -36,11 +36,11 @@ st.markdown(
         color: #000000 !important;
     }
 
-    /* 【ここを徹底修正】フォーム内の送信ボタン（記録するボタン） */
+    /* 【重要】記録するボタン：青背景・白文字 */
     div.stForm [data-testid="stFormSubmitButton"] button {
-        background-color: #0000ff !important; /* 背景：青 */
-        color: #ffffff !important;            /* 文字：白 */
-        -webkit-text-fill-color: #ffffff !important; /* iPhone用文字色 */
+        background-color: #0000ff !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
         border: none !important;
         width: 100% !important;
         font-weight: bold !important;
@@ -84,7 +84,6 @@ with st.form("input_form", clear_on_submit=True):
     with col3: toushi = st.number_input("投資額(円)", min_value=0, step=500)
     with col4: maisuu = st.number_input("回収枚数(枚)", min_value=0, step=10)
     
-    # フォーム内のボタン
     submitted = st.form_submit_button("記録する")
     
     if submitted:
@@ -109,7 +108,8 @@ if not df.empty:
 
     with st.expander("データの削除はこちら"):
         for i, row in df.iloc[::-1].iterrows():
-            col_a, col_b = st.columns()
+            # カラム数を指定(2つに分割)
+            col_a, col_b = st.columns([3, 1])
             col_a.write(f"{row['日付']} {row['機種名']} ({row['収支']}円)")
             if col_b.button("削除", key=f"del_{i}"):
                 df = df.drop(i)
