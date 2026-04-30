@@ -20,41 +20,43 @@ def load_data():
 # 画面設定
 st.set_page_config(page_title="5.5スロ収支", layout="wide")
 
-# --- デザイン修正：崩れを防止し、色だけを指定 ---
+# --- 【最優先修正】背景黒、入力枠白、ボタン背景青・文字白 ---
 st.markdown(
     """
     <style>
-    /* 背景と文字色 */
+    /* 全体の背景 */
     .stApp, [data-testid="stSidebar"] {
         background-color: #000000 !important;
         color: #ffffff !important;
     }
     
-    /* 入力枠内は白、文字は黒（崩れないように最小限の設定） */
-    input {
+    /* 入力枠：背景白、文字黒 */
+    input, div[data-baseweb="input"] {
         background-color: #ffffff !important;
         color: #000000 !important;
-        -webkit-text-fill-color: #000000 !important;
     }
 
-    /* 記録ボタン：青背景・白文字 */
-    div.stButton > button:first-child {
+    /* 【重要】記録するボタン：背景青、文字白に強制固定 */
+    .stButton > button {
         background-color: #0000ff !important;
         color: #ffffff !important;
         -webkit-text-fill-color: #ffffff !important;
         border: none !important;
-        width: 100% !important;
+        font-weight: bold !important;
+        opacity: 1 !important;
     }
 
-    /* 削除ボタン：赤枠 */
+    /* 削除ボタンのみ赤枠デザイン */
     div.stButton > button[kind="secondary"] {
         background-color: #000000 !important;
         color: #ff4b4b !important;
         border: 1px solid #ff4b4b !important;
     }
 
-    /* ラベル（項目名） */
-    label, p { color: #ffffff !important; }
+    /* ラベル類 */
+    label, p, [data-testid="stWidgetLabel"] p {
+        color: #ffffff !important;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -84,8 +86,7 @@ with st.form("input_form", clear_on_submit=True):
     with col3: toushi = st.number_input("投資額(円)", min_value=0, step=500)
     with col4: maisuu = st.number_input("回収枚数(枚)", min_value=0, step=10)
     
-    submitted = st.form_submit_button("記録する")
-    if submitted:
+    if st.form_submit_button("記録する"):
         df = load_data()
         shuushi = int(maisuu * SLOT_TANKA) - toushi
         new_row = pd.DataFrame([[date.strftime("%m/%d"), name, toushi, maisuu, shuushi]], 
@@ -102,11 +103,9 @@ if not df.empty:
     color = "#ff4b4b" if total < 0 else "#00ff00"
     st.markdown(f"## 累計トータル収支: <span style='color:{color};'>{total} 円</span>", unsafe_allow_html=True)
 
-    # 履歴表示（崩れないようにテーブル形式で表示）
     st.write("### 📝 履歴一覧")
     st.dataframe(df[['日付', '機種名', '収支']].iloc[::-1], use_container_width=True)
 
-    # 削除機能（履歴一覧とは別に、シンプルなリストで配置）
     with st.expander("データの削除はこちら"):
         for i, row in df.iloc[::-1].iterrows():
             col_a, col_b = st.columns([3, 1])
