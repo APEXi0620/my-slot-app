@@ -15,7 +15,7 @@ def load_data():
         except:
             df = pd.read_csv(FILENAME, encoding='shift-jis')
         
-        # エラー対策：日付を強制的に文字列にし、空欄を埋める
+        # 日付を強制的に文字列にし、空欄を埋める
         df['日付'] = df['日付'].fillna('').astype(str)
         return df
     return pd.DataFrame(columns=['日付', '機種名', '投資', '回収枚数', '収支'])
@@ -69,10 +69,14 @@ if not df.empty:
     col_left, col_right = st.columns(2)
     with col_left:
         st.write("### 📅 月別収支")
+        # 月抽出の修正：リストの0番目（月）を取り出して「月」を足す
         def get_month(x):
-            if '/' in x: return x.split('/') + "月"
-            if len(x) >= 2: return x[:2] + "月"
+            if '/' in x:
+                return x.split('/')[0] + "月"
+            if len(x) >= 2:
+                return x[:2] + "月"
             return "不明"
+        
         df['月'] = df['日付'].apply(get_month)
         monthly = df.groupby('月', sort=False)['収支'].sum()
         st.bar_chart(monthly)
@@ -85,24 +89,22 @@ if not df.empty:
 
     # --- 修正・削除機能 ---
     st.write("### 📝 履歴の管理（修正・削除）")
-    st.info("表の中の数字を直接書き換えるか、行を選んでDeleteキーで削除できます。最後に下のボタンを押してください。")
+    st.info("表の数字を直接書き換えるか、行を選んで削除（Deleteキー）できます。最後に保存ボタンを押してください。")
     
-    # 編集可能なテーブルを表示
+    # 編集用の一時的なデータ（月列なし）
+    df_for_edit = df.drop(columns=['月']) if '月' in df.columns else df
+
     edited_df = st.data_editor(
-        df,
-        num_rows="dynamic",  # 行の追加・削除を可能にする
+        df_for_edit,
+        num_rows="dynamic",
         use_container_width=True,
         column_config={"収支": st.column_config.NumberColumn(format="%d 円")},
         key="data_editor"
     )
 
     if st.button("履歴の変更を保存する"):
-        # 不要な「月」列を削除して保存
-        if '月' in edited_df.columns:
-            edited_df = edited_df.drop(columns=['月'])
         edited_df.to_csv(FILENAME, index=False, encoding='utf-8-sig')
         st.success("保存しました！")
         st.rerun()
-
 else:
     st.info("データがまだありません。")
