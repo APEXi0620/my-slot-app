@@ -7,8 +7,9 @@ from datetime import datetime
 FILENAME = 'shuushi_data.csv'
 SLOT_TANKA = 5.5
 
-# 主要機種の設定データ（合算確率）
+# 6.5号機ハイパーラッシュ等の設定データ（合算確率）
 SPEC_DATA = {
+    "ハイパーラッシュ": [173.8, 172.5, 170.2, 161.8, 151.7, 142.5],
     "アイムジャグラーEX": [168.5, 159.1, 150.3, 140.9, 135.4, 127.5],
     "マイジャグラーV": [163.8, 159.1, 155.3, 144.0, 135.4, 114.6],
     "ファンキージャグラー2": [165.1, 158.3, 145.3, 133.7, 126.3, 119.6],
@@ -28,22 +29,45 @@ def load_data():
 # 画面設定
 st.set_page_config(page_title="5.5スロ収支管理", layout="wide")
 
-# --- デザイン設定 ---
+# --- デザイン設定：背景黒、入力枠白、記録ボタン青背景・白文字 ---
 st.markdown(
     """
     <style>
-    .stApp, [data-testid="stSidebar"] { background-color: #000000 !important; color: #ffffff !important; }
-    input, div[data-baseweb="input"], div[data-baseweb="select"] {
-        background-color: #ffffff !important; color: #000000 !important;
+    /* 背景は黒 */
+    .stApp, [data-testid="stSidebar"] {
+        background-color: #000000 !important;
+        color: #ffffff !important;
     }
+    
+    /* 入力枠内は白、文字は黒 */
+    input, select, textarea, div[data-baseweb="input"], div[data-baseweb="select"] {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important;
+        border: none !important;
+    }
+
+    /* 記録するボタン：背景を青、文字色を白に強制固定 */
     div.stForm [data-testid="stFormSubmitButton"] button {
-        background-color: #0000ff !important; color: #ffffff !important;
-        -webkit-text-fill-color: #ffffff !important; font-weight: bold !important; width: 100% !important;
+        background-color: #0000ff !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+        border: none !important;
+        width: 100% !important;
+        font-weight: bold !important;
     }
+
+    /* ラベル（項目名）は白 */
+    label, [data-testid="stWidgetLabel"] p {
+        color: #ffffff !important;
+    }
+
+    /* 削除ボタン：背景黒、赤文字 */
     div.stButton > button[kind="secondary"] {
-        background-color: #000000 !important; color: #ff4b4b !important; border: 1px solid #ff4b4b !important;
+        background-color: #000000 !important;
+        color: #ff4b4b !important;
+        border: 1px solid #ff4b4b !important;
     }
-    label, p { color: #ffffff !important; }
     </style>
     """,
     unsafe_allow_html=True
@@ -74,7 +98,7 @@ with st.sidebar:
                     likely_setting = i + 1
             
             st.success(f"推定設定: **設定{likely_setting}** 付近")
-            st.caption(f"※合算値を基準にした目安です")
+            st.caption(f"※{target_model}の公表値を基準に推測")
 
 # --- メイン画面 ---
 st.title("🎰 5.5スロ収支表")
@@ -82,20 +106,16 @@ st.title("🎰 5.5スロ収支表")
 with st.form("input_form", clear_on_submit=True):
     st.write("### 📝 稼働を記録")
     col1, col2 = st.columns(2)
-    with col1:
-        date = st.date_input("日付", datetime.now())
-    with col2:
-        name = st.text_input("機種名")
-    
+    with col1: date = st.date_input("日付", datetime.now())
+    with col2: name = st.text_input("機種名")
     col3, col4 = st.columns(2)
-    with col3:
-        toushi = st.number_input("投資額(円)", min_value=0, step=500)
-    with col4:
-        maisuu = st.number_input("回収枚数(枚)", min_value=0, step=10)
+    with col3: toushi = st.number_input("投資額(円)", min_value=0, step=500)
+    with col4: maisuu = st.number_input("回収枚数(枚)", min_value=0, step=10)
     
     if st.form_submit_button("記録する"):
         df = load_data()
         shuushi = int(maisuu * SLOT_TANKA) - toushi
+        # 保存形式を「月/日」に固定
         new_row = pd.DataFrame([[date.strftime("%m/%d"), name, toushi, maisuu, shuushi]], 
                                columns=['日付', '機種名', '投資', '回収枚数', '収支'])
         df = pd.concat([df, new_row], ignore_index=True)
@@ -115,7 +135,7 @@ if not df.empty:
     
     with st.expander("データの削除はこちら"):
         for i, row in df.iloc[::-1].iterrows():
-            c1, c2 = st.columns(2)
+            c1, c2 = st.columns([3, 1])
             c1.write(f"{row['日付']} {row['機種名']} ({row['収支']}円)")
             if c2.button("削除", key=f"del_{i}"):
                 df = df.drop(i)
