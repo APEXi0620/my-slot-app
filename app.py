@@ -20,7 +20,7 @@ def load_data():
 # 画面設定
 st.set_page_config(page_title="5.5スロ収支", layout="wide")
 
-# --- デザイン設定 ---
+# --- デザイン設定：背景黒、入力枠白、ボタン文字白 ---
 st.markdown(
     """
     <style>
@@ -30,12 +30,19 @@ st.markdown(
         color: #ffffff !important;
     }
     
-    /* 入力枠内と「記録する」ボタンを白、文字を黒にする */
-    input, select, textarea, div[data-baseweb="input"], div[data-baseweb="select"], .stButton>button {
+    /* 入力枠内は白、文字は黒 */
+    input, select, textarea, div[data-baseweb="input"], div[data-baseweb="select"] {
         background-color: #ffffff !important;
         color: #000000 !important;
-        -webkit-text-fill-color: #000000 !important; /* iPhone用 */
+        -webkit-text-fill-color: #000000 !important;
         border: none !important;
+    }
+
+    /* 【修正】記録するボタン：背景を黒、文字色を「白」に固定 */
+    .stButton>button {
+        background-color: #000000 !important;
+        color: #ffffff !important;
+        border: 1px solid #ffffff !important; /* 枠線を白にして場所を明確に */
     }
 
     /* ラベル（項目名）は白 */
@@ -43,9 +50,9 @@ st.markdown(
         color: #ffffff !important;
     }
 
-    /* 削除ボタンのみ赤枠のデザインを維持 */
+    /* 削除ボタン：背景黒、赤文字 */
     div.stButton > button[kind="secondary"] {
-        background-color: #1a0000 !important;
+        background-color: #000000 !important;
         color: #ff4b4b !important;
         border: 1px solid #ff4b4b !important;
     }
@@ -54,13 +61,12 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- サイドバー：確率計算機 ---
+# --- サイドバー ---
 with st.sidebar:
     st.header("🎰 確率計算機")
     kaiten = st.number_input("総回転数", min_value=1, value=1000)
     big = st.number_input("BIG回数", min_value=0)
     reg = st.number_input("REG回数", min_value=0)
-    st.divider()
     if big > 0: st.write(f"BIG確率: **1/{kaiten/big:.1f}**")
     if reg > 0: st.write(f"REG確率: **1/{kaiten/reg:.1f}**")
     if (big + reg) > 0: st.info(f"合成確率: **1/{kaiten/(big+reg):.1f}**")
@@ -77,6 +83,7 @@ with st.form("input_form", clear_on_submit=True):
     with col3: toushi = st.number_input("投資額(円)", min_value=0, step=500)
     with col4: maisuu = st.number_input("回収枚数(枚)", min_value=0, step=10)
     
+    # 記録するボタン
     if st.form_submit_button("記録する"):
         df = load_data()
         shuushi = int(maisuu * SLOT_TANKA) - toushi
@@ -84,7 +91,6 @@ with st.form("input_form", clear_on_submit=True):
                                columns=['日付', '機種名', '投資', '回収枚数', '収支'])
         df = pd.concat([df, new_row], ignore_index=True)
         df.to_csv(FILENAME, index=False, encoding='utf-8-sig')
-        st.success(f"記録完了！ 収支: {shuushi}円")
         st.rerun()
 
 df = load_data()
@@ -99,12 +105,10 @@ if not df.empty:
     with col_left:
         st.write("### 📅 月別収支")
         def get_month(x):
-            if '/' in x:
-                return str(x.split('/')[0]) + "月"
-            if len(x) >= 2:
-                return str(x[:2]) + "月"
+            parts = x.split('/')
+            if len(parts) >= 3: return str(int(parts[1])) + "月"
+            if len(parts) == 2: return str(int(parts[0])) + "月"
             return "不明"
-        
         df['月'] = df['日付'].apply(get_month)
         monthly = df.groupby('月', sort=False)['収支'].sum()
         st.bar_chart(monthly)
