@@ -29,25 +29,20 @@ def load_data():
 # 画面設定
 st.set_page_config(page_title="5.5スロ収支管理", layout="wide")
 
-# --- デザイン設定：背景黒、入力枠白、記録ボタン青背景・白文字 ---
+# --- デザイン設定 ---
 st.markdown(
     """
     <style>
-    /* 背景は黒 */
     .stApp, [data-testid="stSidebar"] {
         background-color: #000000 !important;
         color: #ffffff !important;
     }
-    
-    /* 入力枠内は白、文字は黒 */
-    input, select, textarea, div[data-baseweb="input"], div[data-baseweb="select"] {
+    input, div[data-baseweb="input"], div[data-baseweb="select"] {
         background-color: #ffffff !important;
         color: #000000 !important;
         -webkit-text-fill-color: #000000 !important;
         border: none !important;
     }
-
-    /* 記録するボタン：背景を青、文字色を白に強制固定 */
     div.stForm [data-testid="stFormSubmitButton"] button {
         background-color: #0000ff !important;
         color: #ffffff !important;
@@ -56,13 +51,7 @@ st.markdown(
         width: 100% !important;
         font-weight: bold !important;
     }
-
-    /* ラベル（項目名）は白 */
-    label, [data-testid="stWidgetLabel"] p {
-        color: #ffffff !important;
-    }
-
-    /* 削除ボタン：背景黒、赤文字 */
+    label, p { color: #ffffff !important; }
     div.stButton > button[kind="secondary"] {
         background-color: #000000 !important;
         color: #ff4b4b !important;
@@ -73,11 +62,10 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- サイドバー：設定推測機能付き確率計算機 ---
+# --- サイドバー ---
 with st.sidebar:
     st.header("🎰 設定推測・計算")
     target_model = st.selectbox("機種を選択", ["選択なし"] + list(SPEC_DATA.keys()))
-    
     kaiten = st.number_input("総回転数", min_value=1, value=1000)
     big = st.number_input("BIG回数", min_value=0)
     reg = st.number_input("REG回数", min_value=0)
@@ -86,7 +74,6 @@ with st.sidebar:
     if (big + reg) > 0:
         gassan = kaiten / (big + reg)
         st.write(f"現在の合算: **1/{gassan:.1f}**")
-        
         if target_model != "選択なし":
             specs = SPEC_DATA[target_model]
             best_diff = 999
@@ -96,9 +83,7 @@ with st.sidebar:
                 if diff < best_diff:
                     best_diff = diff
                     likely_setting = i + 1
-            
             st.success(f"推定設定: **設定{likely_setting}** 付近")
-            st.caption(f"※{target_model}の公表値を基準に推測")
 
 # --- メイン画面 ---
 st.title("🎰 5.5スロ収支表")
@@ -115,7 +100,6 @@ with st.form("input_form", clear_on_submit=True):
     if st.form_submit_button("記録する"):
         df = load_data()
         shuushi = int(maisuu * SLOT_TANKA) - toushi
-        # 保存形式を「月/日」に固定
         new_row = pd.DataFrame([[date.strftime("%m/%d"), name, toushi, maisuu, shuushi]], 
                                columns=['日付', '機種名', '投資', '回収枚数', '収支'])
         df = pd.concat([df, new_row], ignore_index=True)
@@ -131,7 +115,8 @@ if not df.empty:
     st.markdown(f"## 累計トータル収支: <span style='color:{color};'>{total} 円</span>", unsafe_allow_html=True)
     
     st.write("### 📝 履歴一覧")
-    st.dataframe(df[['日付', '機種名', '収支']].iloc[::-1], use_container_width=True)
+    # 警告対策： width="stretch" に変更
+    st.dataframe(df[['日付', '機種名', '収支']].iloc[::-1], width=1000)
     
     with st.expander("データの削除はこちら"):
         for i, row in df.iloc[::-1].iterrows():
