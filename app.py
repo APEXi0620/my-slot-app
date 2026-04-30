@@ -7,7 +7,6 @@ from datetime import datetime
 FILENAME = 'shuushi_data.csv'
 SLOT_TANKA = 5.5
 
-# データの読み込み関数
 def load_data():
     if os.path.exists(FILENAME):
         try:
@@ -21,28 +20,38 @@ def load_data():
 # 画面設定
 st.set_page_config(page_title="5.5スロ収支", layout="wide")
 
-# --- 背景を黒・文字を白に固定するデザイン設定 ---
+# --- 【修正版】デザイン設定：サイドバーも入力欄もすべて黒背景・白文字に ---
 st.markdown(
     """
     <style>
-    /* 全体の背景色と文字色 */
-    .stApp {
-        background-color: #000000;
-        color: #ffffff;
-    }
-    /* 入力欄やボタンの見た目調整 */
-    input, select, textarea {
+    /* 全体とサイドバーの背景 */
+    .stApp, [data-testid="stSidebar"] {
+        background-color: #000000 !important;
         color: #ffffff !important;
     }
+    /* 入力欄の背景と文字色 */
+    input, [data-testid="stWidgetLabel"], .stNumberInput div, .stTextInput div {
+        color: #ffffff !important;
+    }
+    div[data-baseweb="input"] {
+        background-color: #1a1a1a !important;
+        border: 1px solid #333333 !important;
+    }
+    /* ボタンのスタイル */
     .stButton>button {
         background-color: #333333;
         color: #ffffff;
         border-radius: 5px;
+        width: 100%;
     }
-    /* 履歴の削除ボタンを赤っぽく */
-    button[kind="secondary"] {
+    /* 削除ボタン（赤） */
+    div.stButton > button[kind="secondary"] {
         color: #ff4b4b !important;
         border-color: #ff4b4b !important;
+    }
+    /* メトリック（収支合計）の文字色 */
+    [data-testid="stMetricValue"] {
+        color: #ffffff !important;
     }
     </style>
     """,
@@ -86,7 +95,6 @@ df = load_data()
 
 if not df.empty:
     st.divider()
-    # 累計収支を大きく表示
     total = df['収支'].sum()
     color = "#ff4b4b" if total < 0 else "#00ff00"
     st.markdown(f"### 累計トータル収支: <span style='color:{color}; font-size:32px;'>{total} 円</span>", unsafe_allow_html=True)
@@ -95,7 +103,7 @@ if not df.empty:
     with col_left:
         st.write("### 📅 月別収支")
         def get_month(x):
-            if '/' in x: return x.split('/')[0] + "月"
+            if '/' in x: return x.split('/') + "月"
             if len(x) >= 2: return x[:2] + "月"
             return "不明"
         df['月'] = df['日付'].apply(get_month)
@@ -106,15 +114,13 @@ if not df.empty:
         st.write("### 📈 機種別分析")
         summary = df.groupby('機種名').agg(平均=('収支', 'mean'), 回数=('収支', 'count'))
         summary['平均'] = summary['平均'].astype(int)
+        # テーブルの背景も馴染ませる
         st.table(summary)
 
-    # --- 履歴管理（削除ボタン付き） ---
     st.divider()
     st.write("### 📝 履歴の管理")
-    
-    # 最新のデータが上にくるように逆順で表示
     for i, row in df.iloc[::-1].iterrows():
-        c1, c2, c3, c4 = st.columns([1, 2, 1, 1])
+        c1, c2, c3, c4 = st.columns([1,2,1,1]) # 幅の比率を調整
         c1.write(row['日付'])
         c2.write(row['機種名'])
         c3.write(f"{row['収支']}円")
