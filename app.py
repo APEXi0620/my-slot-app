@@ -20,43 +20,41 @@ def load_data():
 # 画面設定
 st.set_page_config(page_title="5.5スロ収支", layout="wide")
 
-# --- デザイン設定：背景黒、入力枠白、ボタン青背景・白文字 ---
+# --- デザイン修正：崩れを防止し、色だけを指定 ---
 st.markdown(
     """
     <style>
-    /* 背景は黒 */
+    /* 背景と文字色 */
     .stApp, [data-testid="stSidebar"] {
         background-color: #000000 !important;
         color: #ffffff !important;
     }
     
-    /* 入力枠内は白、文字は黒 */
-    input, select, textarea, div[data-baseweb="input"], div[data-baseweb="select"] {
+    /* 入力枠内は白、文字は黒（崩れないように最小限の設定） */
+    input {
         background-color: #ffffff !important;
         color: #000000 !important;
         -webkit-text-fill-color: #000000 !important;
-        border: none !important;
     }
 
-    /* 【修正】記録するボタン：背景を青、文字色を白に設定 */
-    .stButton>button {
+    /* 記録ボタン：青背景・白文字 */
+    div.stButton > button:first-child {
         background-color: #0000ff !important;
         color: #ffffff !important;
         -webkit-text-fill-color: #ffffff !important;
         border: none !important;
+        width: 100% !important;
     }
 
-    /* ラベル（項目名）は白 */
-    label, [data-testid="stWidgetLabel"] p {
-        color: #ffffff !important;
-    }
-
-    /* 削除ボタン：背景黒、赤文字 */
+    /* 削除ボタン：赤枠 */
     div.stButton > button[kind="secondary"] {
         background-color: #000000 !important;
         color: #ff4b4b !important;
         border: 1px solid #ff4b4b !important;
     }
+
+    /* ラベル（項目名） */
+    label, p { color: #ffffff !important; }
     </style>
     """,
     unsafe_allow_html=True
@@ -68,9 +66,10 @@ with st.sidebar:
     kaiten = st.number_input("総回転数", min_value=1, value=1000)
     big = st.number_input("BIG回数", min_value=0)
     reg = st.number_input("REG回数", min_value=0)
-    if big > 0: st.write(f"BIG確率: **1/{kaiten/big:.1f}**")
-    if reg > 0: st.write(f"REG確率: **1/{kaiten/reg:.1f}**")
-    if (big + reg) > 0: st.info(f"合成確率: **1/{kaiten/(big+reg):.1f}**")
+    st.divider()
+    if big > 0: st.write(f"BIG 1/{kaiten/big:.1f}")
+    if reg > 0: st.write(f"REG 1/{kaiten/reg:.1f}")
+    if (big+reg) > 0: st.info(f"合算 1/{kaiten/(big+reg):.1f}")
 
 # --- メイン画面 ---
 st.title("🎰 5.5スロ収支表")
@@ -80,12 +79,13 @@ with st.form("input_form", clear_on_submit=True):
     col1, col2 = st.columns(2)
     with col1: date = st.date_input("日付", datetime.now())
     with col2: name = st.text_input("機種名")
+    
     col3, col4 = st.columns(2)
     with col3: toushi = st.number_input("投資額(円)", min_value=0, step=500)
     with col4: maisuu = st.number_input("回収枚数(枚)", min_value=0, step=10)
     
-    # 記録するボタン
-    if st.form_submit_button("記録する"):
+    submitted = st.form_submit_button("記録する")
+    if submitted:
         df = load_data()
         shuushi = int(maisuu * SLOT_TANKA) - toushi
         new_row = pd.DataFrame([[date.strftime("%m/%d"), name, toushi, maisuu, shuushi]], 
@@ -100,36 +100,20 @@ if not df.empty:
     st.divider()
     total = df['収支'].sum()
     color = "#ff4b4b" if total < 0 else "#00ff00"
-    st.markdown(f"### 累計トータル収支: <span style='color:{color}; font-size:32px;'>{total} 円</span>", unsafe_allow_html=True)
+    st.markdown(f"## 累計トータル収支: <span style='color:{color};'>{total} 円</span>", unsafe_allow_html=True)
 
-    col_left, col_right = st.columns(2)
-    with col_left:
-        st.write("### 📅 月別収支")
-        def get_month(x):
-            parts = x.split('/')
-            if len(parts) >= 3: return str(int(parts[1])) + "月"
-            if len(parts) == 2: return str(int(parts[0])) + "月"
-            return "不明"
-        df['月'] = df['日付'].apply(get_month)
-        monthly = df.groupby('月', sort=False)['収支'].sum()
-        st.bar_chart(monthly)
+    # 履歴表示（崩れないようにテーブル形式で表示）
+    st.write("### 📝 履歴一覧")
+    st.dataframe(df[['日付', '機種名', '収支']].iloc[::-1], use_container_width=True)
 
-    with col_right:
-        st.write("### 📈 機種別分析")
-        summary = df.groupby('機種名').agg(平均=('収支', 'mean'), 回数=('収支', 'count'))
-        summary['平均'] = summary['平均'].astype(int)
-        st.table(summary)
-
-    st.divider()
-    st.write("### 📝 履歴の管理")
-    for i, row in df.iloc[::-1].iterrows():
-        c1, c2, c3, c4 = st.columns(4) 
-        c1.write(row['日付'])
-        c2.write(row['機種名'])
-        c3.write(f"{row['収支']}円")
-        if c4.button("削除", key=f"del_{i}"):
-            df = df.drop(i)
-            df.to_csv(FILENAME, index=False, encoding='utf-8-sig')
-            st.rerun()
+    # 削除機能（履歴一覧とは別に、シンプルなリストで配置）
+    with st.expander("データの削除はこちら"):
+        for i, row in df.iloc[::-1].iterrows():
+            col_a, col_b = st.columns([3, 1])
+            col_a.write(f"{row['日付']} {row['機種名']} ({row['収支']}円)")
+            if col_b.button("削除", key=f"del_{i}"):
+                df = df.drop(i)
+                df.to_csv(FILENAME, index=False, encoding='utf-8-sig')
+                st.rerun()
 else:
     st.info("データがありません。")
