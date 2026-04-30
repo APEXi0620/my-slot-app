@@ -42,10 +42,10 @@ st.markdown(
         background-color: #0000ff !important; color: #ffffff !important;
         -webkit-text-fill-color: #ffffff !important; font-weight: bold !important; width: 100% !important;
     }
+    label, p { color: #ffffff !important; }
     div.stButton > button[kind="secondary"] {
         background-color: #000000 !important; color: #ff4b4b !important; border: 1px solid #ff4b4b !important;
     }
-    label, p { color: #ffffff !important; }
     </style>
     """,
     unsafe_allow_html=True
@@ -88,7 +88,6 @@ with st.form("input_form", clear_on_submit=True):
     if st.form_submit_button("記録する"):
         df = load_data()
         shuushi = int(maisuu * SLOT_TANKA) - toushi
-        # 日付を 月/日 に固定して保存
         new_row = pd.DataFrame([[date.strftime("%m/%d"), name, toushi, maisuu, shuushi]], 
                                columns=['日付', '機種名', '投資', '回収枚数', '収支'])
         df = pd.concat([df, new_row], ignore_index=True)
@@ -101,7 +100,6 @@ if not df.empty:
     st.divider()
     total = df['収支'].sum()
     color = "#ff4b4b" if total < 0 else "#00ff00"
-    # 収支を整数にしてカンマを入れる修正
     st.markdown(f"## 累計トータル収支: <span style='color:{color};'>{int(total):,} 円</span>", unsafe_allow_html=True)
     
     st.write("### 📝 履歴一覧")
@@ -109,7 +107,8 @@ if not df.empty:
     
     with st.expander("データの削除はこちら"):
         for i, row in df.iloc[::-1].iterrows():
-            c1, c2 = st.columns()
+            # 修正ポイント：columns(2) と指定してエラーを回避
+            c1, c2 = st.columns(2)
             c1.write(f"{row['日付']} {row['機種名']} ({row['収支']}円)")
             if c2.button("削除", key=f"del_{i}"):
                 df = df.drop(i)
