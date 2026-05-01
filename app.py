@@ -170,7 +170,7 @@ if not df.empty:
     with st.expander("データの削除はこちら"):
         sheet = get_spreadsheet()
         for i, row in df.iterrows():
-            c1, c2 = st.columns()
+            c1, c2 = st.columns(2)
             c1.write(f"【{row['日付']}】{row['機種名']} ({row['収支']}円)")
             if c2.button("削除", key=f"del_{i}"):
                 # ヘッダーがあるため i+2 行目を削除
