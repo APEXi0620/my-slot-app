@@ -7,7 +7,7 @@ from datetime import datetime
 # --- 設定 ---
 SLOT_TANKA = 5.5
 
-# 機種データ (スペック)
+# 機種データ
 SPEC_DATA = {
     "ミスタージャグラー": [163.8, 159.1, 153.8, 142.5, 131.6, 118.7],
     "アイムジャグラーEX": [168.5, 159.1, 150.3, 140.9, 135.4, 127.5],
@@ -60,18 +60,17 @@ SPEC_DATA = {
 # --- Google Sheets 接続関数 ---
 def get_spreadsheet():
     try:
-        # Streamlit Cloud (Secrets) 優先
+        # Secrets 優先
         if "gcp_service_account" in st.secrets:
             creds_dict = dict(st.secrets["gcp_service_account"])
             creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict)
         else:
-            # ローカル用
             scope = ['https://google.com', 'https://googleapis.com']
             creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
         
         client = gspread.authorize(creds)
-        # スプレッドシート名を確認してください
-        return client.open("55slot_data").sheet1
+        # --- ここを実際のスプレッドシートのURLに書き換えてください ---
+        return client.open_by_url("https://docs.google.com/spreadsheets/d/1lx_MZivY0Bzdevh3w86Xq8gB5R99b4R0niR0YySx734/edit?gid=0#gid=0").sheet1
     except Exception as e:
         st.error(f"スプレッドシート接続失敗: {e}")
         return None
@@ -83,7 +82,6 @@ def load_data():
         if not data:
             return pd.DataFrame(columns=['日付', '機種名', '投資', '回収枚数', '収支', '備考'])
         df = pd.DataFrame(data)
-        # 数値列のデータ型を強制変換
         for col in ['投資', '回収枚数', '収支']:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
@@ -110,7 +108,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- サイドバー (設定推測) ---
+# --- サイドバー ---
 with st.sidebar:
     st.header("🎰 設定推測・計算")
     target_model = st.selectbox("機種を選択", ["選択なし"] + sorted(list(SPEC_DATA.keys())))
@@ -172,7 +170,7 @@ if not df.empty:
     with st.expander("データの削除はこちら"):
         sheet = get_spreadsheet()
         for i, row in df.iterrows():
-            c1, c2 = st.columns([4, 1])
+            c1, c2 = st.columns()
             c1.write(f"【{row['日付']}】{row['機種名']} ({row['収支']}円)")
             if c2.button("削除", key=f"del_{i}"):
                 # ヘッダーがあるため i+2 行目を削除
