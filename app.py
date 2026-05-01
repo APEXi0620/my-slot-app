@@ -9,6 +9,7 @@ SLOT_TANKA = 5.5
 
 # 主要機種の設定データ（合算確率）
 SPEC_DATA = {
+    "ミスタージャグラー": [163.8, 159.1, 153.8, 142.5, 131.6, 118.7],
     "ハイパーラッシュ": [173.8, 172.5, 170.2, 161.8, 151.7, 142.5],
     "アイムジャグラーEX": [168.5, 159.1, 150.3, 140.9, 135.4, 127.5],
     "マイジャグラーV": [163.8, 159.1, 155.3, 144.0, 135.4, 114.6],
@@ -23,8 +24,11 @@ def load_data():
         except:
             df = pd.read_csv(FILENAME, encoding='shift-jis')
         df['日付'] = df['日付'].fillna('').astype(str)
+        # 備考欄がない古いデータのために列を追加
+        if '備考' not in df.columns:
+            df['備考'] = ""
         return df
-    return pd.DataFrame(columns=['日付', '機種名', '投資', '回収枚数', '収支'])
+    return pd.DataFrame(columns=['日付', '機種名', '投資', '回収枚数', '収支', '備考'])
 
 # 画面設定
 st.set_page_config(page_title="5.5スロ収支管理", layout="wide")
@@ -34,7 +38,7 @@ st.markdown(
     """
     <style>
     .stApp, [data-testid="stSidebar"] { background-color: #000000 !important; color: #ffffff !important; }
-    input, div[data-baseweb="input"], div[data-baseweb="select"] {
+    input, div[data-baseweb="input"], div[data-baseweb="select"], textarea {
         background-color: #ffffff !important; color: #000000 !important;
         -webkit-text-fill-color: #000000 !important;
     }
@@ -42,10 +46,10 @@ st.markdown(
         background-color: #0000ff !important; color: #ffffff !important;
         -webkit-text-fill-color: #ffffff !important; font-weight: bold !important; width: 100% !important;
     }
-    label, p { color: #ffffff !important; }
     div.stButton > button[kind="secondary"] {
         background-color: #000000 !important; color: #ff4b4b !important; border: 1px solid #ff4b4b !important;
     }
+    label, p { color: #ffffff !important; }
     </style>
     """,
     unsafe_allow_html=True
@@ -81,15 +85,19 @@ with st.form("input_form", clear_on_submit=True):
     col1, col2 = st.columns(2)
     with col1: date = st.date_input("日付", datetime.now())
     with col2: name = st.text_input("機種名")
+    
     col3, col4 = st.columns(2)
     with col3: toushi = st.number_input("投資額(円)", min_value=0, step=500)
     with col4: maisuu = st.number_input("回収枚数(枚)", min_value=0, step=10)
     
+    # 備考欄を追加
+    memo = st.text_area("備考 (メモ)", placeholder="例: 設定4以上確定、ヤメ時ミスった等")
+    
     if st.form_submit_button("記録する"):
         df = load_data()
         shuushi = int(maisuu * SLOT_TANKA) - toushi
-        new_row = pd.DataFrame([[date.strftime("%m/%d"), name, toushi, maisuu, shuushi]], 
-                               columns=['日付', '機種名', '投資', '回収枚数', '収支'])
+        new_row = pd.DataFrame([[date.strftime("%m/%d"), name, toushi, maisuu, shuushi, memo]], 
+                               columns=['日付', '機種名', '投資', '回収枚数', '収支', '備考'])
         df = pd.concat([df, new_row], ignore_index=True)
         df.to_csv(FILENAME, index=False, encoding='utf-8-sig')
         st.rerun()
@@ -103,11 +111,11 @@ if not df.empty:
     st.markdown(f"## 累計トータル収支: <span style='color:{color};'>{int(total):,} 円</span>", unsafe_allow_html=True)
     
     st.write("### 📝 履歴一覧")
-    st.dataframe(df[['日付', '機種名', '収支']].iloc[::-1], use_container_width=True)
+    # 備考も含めて表示
+    st.dataframe(df[['日付', '機種名', '収支', '備考']].iloc[::-1], use_container_width=True)
     
     with st.expander("データの削除はこちら"):
         for i, row in df.iloc[::-1].iterrows():
-            # 修正ポイント：columns(2) と指定してエラーを回避
             c1, c2 = st.columns(2)
             c1.write(f"{row['日付']} {row['機種名']} ({row['収支']}円)")
             if c2.button("削除", key=f"del_{i}"):
