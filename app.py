@@ -1,13 +1,12 @@
 import streamlit as st
 import pandas as pd
-import os
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 
 # --- 設定 ---
-FILENAME = 'shuushi_data.csv'
 SLOT_TANKA = 5.5
-
-# 機種データ (初当たり・合算確率: 設定1, 2, 3, 4, 5, 6) ※0は設定なし
+# 機種データは元のものをそのまま保持
 SPEC_DATA = {
     "ミスタージャグラー": [163.8, 159.1, 153.8, 142.5, 131.6, 118.7],
     "アイムジャグラーEX": [168.5, 159.1, 150.3, 140.9, 135.4, 127.5],
@@ -57,18 +56,37 @@ SPEC_DATA = {
     "ドルアーガの塔": [209.0, 198.0, 181.0, 163.0, 150.0, 135.0],
 }
 
+# --- Google Sheets 接続関数 ---
+def get_spreadsheet():
+    try:
+        # Streamlit Cloud (Secrets) 優先、なければローカルファイル
+        if "gcp_service_account" in st.secrets:
+            creds_dict = dict(st.secrets["gcp_service_account"])
+            creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict)
+        else:
+            scope = ['https://google.com', 'https://googleapis.com']
+            creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
+        
+        client = gspread.authorize(creds)
+        return client.open("55slot_data").sheet1
+    except Exception as e:
+        st.error(f"スプレッドシート接続失敗: {e}")
+        return None
+
 def load_data():
-    if os.path.exists(FILENAME):
-        try:
-            df = pd.read_csv(FILENAME, encoding='utf-8-sig')
-        except:
-            df = pd.read_csv(FILENAME, encoding='shift-jis')
-        df['日付'] = df['日付'].fillna('').astype(str)
-        if '備考' not in df.columns: df['備考'] = ""
+    sheet = get_spreadsheet()
+    if sheet:
+        data = sheet.get_all_records()
+        if not data:
+            return pd.DataFrame(columns=['日付', '機種名', '投資', '回収枚数', '収支', '備考'])
+        df = pd.DataFrame(data)
+        # 数値変換
+        for col in ['投資', '回収枚数', '収支']:
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
         return df
     return pd.DataFrame(columns=['日付', '機種名', '投資', '回収枚数', '収支', '備考'])
 
-st.set_page_config(page_title="5.5スロ収支管理", layout="wide")
+st.set_page_config(page_title="5.5スロ収支管理（保存版）", layout="wide")
 
 # デザイン調整
 st.markdown(
@@ -77,11 +95,6 @@ st.markdown(
     .stApp, [data-testid="stSidebar"] { background-color: #000000 !important; color: #ffffff !important; }
     input, div[data-baseweb="input"], div[data-baseweb="select"], textarea {
         background-color: #ffffff !important; color: #000000 !important;
-        -webkit-text-fill-color: #000000 !important;
-    }
-    div.stForm [data-testid="stFormSubmitButton"] button {
-        background-color: #0000ff !important; color: #ffffff !important;
-        font-weight: bold !important; width: 100% !important;
     }
     label, p, h1, h2, h3 { color: #ffffff !important; }
     </style>
@@ -89,7 +102,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- サイドバー (設定推測) ---
+# --- サイドバー ---
 with st.sidebar:
     st.header("🎰 設定推測・計算")
     target_model = st.selectbox("機種を選択", ["選択なし"] + sorted(list(SPEC_DATA.keys())))
@@ -98,7 +111,6 @@ with st.sidebar:
     with col_b: s_big = st.number_input("BIG回数", min_value=0)
     with col_r: s_reg = st.number_input("REG(初当り)", min_value=0)
     
-    st.divider()
     if (s_big + s_reg) > 0:
         gassan = kaiten / (s_big + s_reg)
         st.write(f"現在の合算: **1/{gassan:.1f}**")
@@ -114,17 +126,10 @@ with st.sidebar:
                     likely_setting = i + 1
             st.success(f"推定設定: **設定{likely_setting}** 付近")
 
-    # 月別収支グラフ
-    df_chart = load_data()
-    if not df_chart.empty:
-        st.divider()
-        st.write("📊 月別収支推移")
-        df_chart['月'] = df_chart['日付'].str.split('/').str[0] + "月"
-        monthly_sum = df_chart.groupby('月')['収支'].sum()
-        st.bar_chart(monthly_sum)
-
 # --- メイン画面 ---
-st.title("🎰 5.5スロ収支表")
+st.title("🎰 5.5スロ収支表 (スプレッドシート連携版)")
+
+df = load_data()
 
 with st.form("input_form", clear_on_submit=True):
     st.write("### 📝 稼働を記録")
@@ -132,24 +137,19 @@ with st.form("input_form", clear_on_submit=True):
     with col1: date = st.date_input("日付", datetime.now())
     with col2: name = st.selectbox("機種名", sorted(list(SPEC_DATA.keys())) + ["その他"])
     
-    if name == "その他":
-        name = st.text_input("機種名を手入力してください")
-
     col3, col4 = st.columns(2)
     with col3: toushi = st.number_input("投資額(円)", min_value=0, step=500)
     with col4: maisuu = st.number_input("回収枚数(枚)", min_value=0, step=10)
-    memo = st.text_area("備考 (メモ)", placeholder="例: 設定4以上確定、ヤメ時ミスった等")
+    memo = st.text_area("備考 (メモ)")
     
     if st.form_submit_button("記録する"):
-        df = load_data()
-        shuushi = int(maisuu * SLOT_TANKA) - toushi
-        new_row = pd.DataFrame([[date.strftime("%m/%d"), name, toushi, maisuu, shuushi, memo]], 
-                               columns=['日付', '機種名', '投資', '回収枚数', '収支', '備考'])
-        df = pd.concat([df, new_row], ignore_index=True)
-        df.to_csv(FILENAME, index=False, encoding='utf-8-sig')
-        st.rerun()
-
-df = load_data()
+        sheet = get_spreadsheet()
+        if sheet:
+            shuushi = int(maisuu * SLOT_TANKA) - toushi
+            new_row = [date.strftime("%m/%d"), name, toushi, maisuu, shuushi, memo]
+            sheet.append_row(new_row)
+            st.success("スプレッドシートに保存しました！")
+            st.rerun()
 
 if not df.empty:
     st.divider()
@@ -158,15 +158,19 @@ if not df.empty:
     st.markdown(f"## 累計トータル収支: <span style='color:{color};'>{int(total):,} 円</span>", unsafe_allow_html=True)
     
     st.write("### 📝 履歴一覧")
-    st.dataframe(df[['日付', '機種名', '収支', '備考']].iloc[::-1], use_container_width=True, hide_index=True)
+    # 表示用に逆順
+    display_df = df.iloc[::-1].copy()
+    st.dataframe(display_df[['日付', '機種名', '収支', '備考']], use_container_width=True, hide_index=True)
     
     with st.expander("データの削除はこちら"):
-        for i, row in df.iloc[::-1].iterrows():
-            c1, c2 = st.columns([3, 1])
+        sheet = get_spreadsheet()
+        # 元のインデックスを使って削除するために df (正順) をループ
+        for i, row in df.iterrows():
+            c1, c2 = st.columns([4, 1])
             c1.write(f"{row['日付']} {row['機種名']} ({row['収支']}円)")
+            # gspreadの削除は1始まり、かつヘッダーがあるため i+2
             if c2.button("削除", key=f"del_{i}"):
-                df = df.drop(i)
-                df.to_csv(FILENAME, index=False, encoding='utf-8-sig')
+                sheet.delete_rows(i + 2)
                 st.rerun()
 else:
     st.info("データがありません。")
