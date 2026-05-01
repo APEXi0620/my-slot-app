@@ -7,7 +7,7 @@ from datetime import datetime
 FILENAME = 'shuushi_data.csv'
 SLOT_TANKA = 5.5
 
-# 主要機種の設定データ（合算確率）
+# 主要機種の設定データ
 SPEC_DATA = {
     "ミスタージャグラー": [163.8, 159.1, 153.8, 142.5, 131.6, 118.7],
     "ハイパーラッシュ": [173.8, 172.5, 170.2, 161.8, 151.7, 142.5],
@@ -24,16 +24,13 @@ def load_data():
         except:
             df = pd.read_csv(FILENAME, encoding='shift-jis')
         df['日付'] = df['日付'].fillna('').astype(str)
-        # 備考欄がない古いデータのために列を追加
         if '備考' not in df.columns:
             df['備考'] = ""
         return df
     return pd.DataFrame(columns=['日付', '機種名', '投資', '回収枚数', '収支', '備考'])
 
-# 画面設定
 st.set_page_config(page_title="5.5スロ収支管理", layout="wide")
 
-# --- デザイン設定 ---
 st.markdown(
     """
     <style>
@@ -46,10 +43,10 @@ st.markdown(
         background-color: #0000ff !important; color: #ffffff !important;
         -webkit-text-fill-color: #ffffff !important; font-weight: bold !important; width: 100% !important;
     }
+    label, p { color: #ffffff !important; }
     div.stButton > button[kind="secondary"] {
         background-color: #000000 !important; color: #ff4b4b !important; border: 1px solid #ff4b4b !important;
     }
-    label, p { color: #ffffff !important; }
     </style>
     """,
     unsafe_allow_html=True
@@ -62,6 +59,7 @@ with st.sidebar:
     kaiten = st.number_input("総回転数", min_value=1, value=1000)
     big = st.number_input("BIG回数", min_value=0)
     reg = st.number_input("REG回数", min_value=0)
+    
     st.divider()
     if (big + reg) > 0:
         gassan = kaiten / (big + reg)
@@ -77,6 +75,16 @@ with st.sidebar:
                     likely_setting = i + 1
             st.success(f"推定設定: **設定{likely_setting}** 付近")
 
+    # 【新機能】サイドバーの下に月別収支グラフを表示
+    df_chart = load_data()
+    if not df_chart.empty:
+        st.divider()
+        st.write("📊 月別収支推移")
+        # 日付から月を抽出 (例: 05/01 -> 05月)
+        df_chart['月'] = df_chart['日付'].str.split('/').str[0] + "月"
+        monthly_sum = df_chart.groupby('月')['収支'].sum()
+        st.bar_chart(monthly_sum)
+
 # --- メイン画面 ---
 st.title("🎰 5.5スロ収支表")
 
@@ -85,12 +93,9 @@ with st.form("input_form", clear_on_submit=True):
     col1, col2 = st.columns(2)
     with col1: date = st.date_input("日付", datetime.now())
     with col2: name = st.text_input("機種名")
-    
     col3, col4 = st.columns(2)
     with col3: toushi = st.number_input("投資額(円)", min_value=0, step=500)
     with col4: maisuu = st.number_input("回収枚数(枚)", min_value=0, step=10)
-    
-    # 備考欄を追加
     memo = st.text_area("備考 (メモ)", placeholder="例: 設定4以上確定、ヤメ時ミスった等")
     
     if st.form_submit_button("記録する"):
@@ -111,7 +116,6 @@ if not df.empty:
     st.markdown(f"## 累計トータル収支: <span style='color:{color};'>{int(total):,} 円</span>", unsafe_allow_html=True)
     
     st.write("### 📝 履歴一覧")
-    # 備考も含めて表示
     st.dataframe(df[['日付', '機種名', '収支', '備考']].iloc[::-1], use_container_width=True)
     
     with st.expander("データの削除はこちら"):
