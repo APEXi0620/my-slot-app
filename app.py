@@ -8,6 +8,7 @@ import os
 # --- 1. 基本設定 ---
 SLOT_TANKA = 5.5
 
+# 全機種スペックデータ (一切の省略なし)
 SPEC_DATA = {
     "ミスタージャグラー": [163.8, 159.1, 153.8, 142.5, 131.6, 118.7],
     "アイムジャグラーEX": [168.5, 159.1, 150.3, 140.9, 135.4, 127.5],
@@ -58,52 +59,21 @@ SPEC_DATA = {
     "甲鉄城のカバネリ": [407.9, 404.5, 362.4, 313.2, 290.6, 245.1],
 }
 
+# --- 2. Google Sheets 接続関数 ---
 def get_spreadsheet():
     try:
-        scopes = ['https://googleapis.com', 'https://googleapis.com']
+        scopes = [
+            'https://googleapis.com',
+            'https://googleapis.com'
+        ]
         
-        info = {
-            "type": "service_account",
-            "project_id": "erudite-flag-495006-f8",
-            "private_key_id": "8df99c3209a691c6a4f6ad095d7867c33161f84b",
-            "private_key": "-----BEGIN PRIVATE KEY-----\n" + 
-                           "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDl6FW/MI/SOzVN\n" +
-                           "6oUOLGNF6QAHEj7y09iGMkg1z/iY1r2BzvSNlCHFELsUBuX6lykABWj5YMCijpTY\n" +
-                           "f5tZiPMcjCjnxEh0as60UehoKEfiGFen0P7fMXwY60OhZw+YJ+RxttzE7l9ZG6Iw\n" +
-                           "uhQfZkrajP1Gh7PpCEethweqFaJqbh0sB4GzCU5b37HZXObvjlOVFbVd+egDiW2g\n" +
-                           "sjff5zr+qyhly4n57dK7sy1yu9hcLC/rnkdnv9dUYcyvRKAJQ9a/jyD3KTSNOD/h\n" +
-                           "JU5jehNbRF+fmSzU+KhAQYcYsSXbDm4Ynofw74nZkbIf2WqSN//fe52kMHiLIfXy\n" +
-                           "ddAbum4tAgMBAAECggEAB5RDs2RV8W/LP5DSJxf2g9j9C76hvZ6XPkFNGR0MjHlT\n" +
-                           "0QIyFLLD9DurdysNDNhL3TjQb5wtbY52wLZgODDoFtJWDOHvI4tb2hzzJO/jAsSb\n" +
-                           "qygcJt56QVYMKjd8D5+NC+Sj3YggM49SJvoTbL+SCydnuBoEJ9QCjOltKsHA03JS\n" +
-                           "2313Pahi6jDZC9By+7F1uA1ITZFV1Z3YJATRuAvPirW5vbYxpncW15HD3pO8Stf0\n" +
-                           "PZgcebQx6qrvhIe9/lYwFzFoSmwyAsp9okLIn4Zyj4+aQhtmnPBOnvoGysRJyTPc\n" +
-                           "5tjSLqjXYZ63hz5mvIpoBSUCC4MRRbyGqbxlHfcnXwKBgQD2cPL3fgNERrK6Hho+\n" +
-                           "Jz7q6hGvbyMJqw3I8NKinChFwBm7nohtFMHkH5qoCb+kgGGtbJ0cpDJ1TXzD3mHe\n" +
-                           "RJwXNQwe0nJD8geqBDSOPEjezfchmS2m6nHZk63MvXIhIIlwQg81ytyWrj7HXc5F\n" +
-                           "ijsOOWyBARrOEOgFc6xsn/YIdwKBgQDu0zbQ0CwvVsnhjfAnfeeP0/RH80QwK2A9\n" +
-                           "yzC4pnIL/gSapFCjIHKxr8Cq0A9attoU068ajXDfHEzAXNop2m+muzY6YzhmNdIJ\n" +
-                           "1gS65yOv5nJpIYkeq47bjlgngt82UXWidOWUNbZI9hwY6jhpHHhYX9mIC/7DcWwx\n" +
-                           "CrfAOCLLewKBgQDhFwskeIldTEGkcyg/CrOR9xcOKLFU/FKL7UJGWeECzFH0pvku\n" +
-                           "wJ3T0fX9c2ICS2xr7V+XMHYR5COH909mpz32iHI4mLjbTG4poMur+m4IaxFFM9aZ\n" +
-                           "ntVslgphk/8gFb+V4ji28UTynuCEJEan8pCQKevKa5bpo6tIxYJTlZjlfQwKBgGzV\n" +
-                           "4EMkux4PpQyfDHRS0jYfV1F6sPZqrf87G8bqQ0rnxd1bSEwuu1XyTBELpBOpBJU9\n" +
-                           "Kq0lC+0BDpETP3CXVQ5cfof5M3iQylklKR6ruv2sPTNfzwclE4NGyTGoWGR+lucj\n" +
-                           "8oOqPpndXkyUYIS2LrnHZHC1VrJme/GVesukSWcFAoGBAJaL/SlOSeNUqNnvJeHe\n" +
-                           "nnArCxQuXXXWe8gQJIgJxSuFNFeK6r8TF2povPHQLJ+seXpKNAtTDOEUsEvTMVt6i\n" +
-                           "5JkhspGM531n4WBJhvMHE5VdGPhb4qCmeSqItdOsn6ImMqH9ODX8b86e8hQpClB9\n" +
-                           "KjVSq6PT++8RYexdGLj8VKWx\n" +
-                           "-----END PRIVATE KEY-----\n",
-            "client_email": "slot-bot@://gserviceaccount.com",
-            "client_id": "114782345326931021263",
-            "auth_uri": "https://google.com",
-            "token_uri": "https://googleapis.com",
-            "auth_provider_x509_cert_url": "https://googleapis.com",
-            "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/slot-bot@://gserviceaccount.com",
-            "universe_domain": "googleapis.com"
-        }
+        # 【重要】Secretsは使わず、Eclipseのフォルダ内にある credentials.json を直接読み込む
+        if os.path.exists('credentials.json'):
+            creds = Credentials.from_service_account_file('credentials.json', scopes=scopes)
+        else:
+            st.error("【エラー】credentials.json が見つかりません。")
+            return None
         
-        creds = Credentials.from_service_account_info(info, scopes=scopes)
         client = gspread.authorize(creds)
         return client.open("55slot_data").sheet1
     except Exception as e:
@@ -116,15 +86,19 @@ def load_data():
     if sheet:
         try:
             data = sheet.get_all_records()
-            if not data: return pd.DataFrame(columns=['日付', '機種名', '投資', '回収枚数', '収支', '備考'])
+            if not data:
+                return pd.DataFrame(columns=['日付', '機種名', '投資', '回収枚数', '収支', '備考'])
             df = pd.DataFrame(data)
+            # 数値型変換
             for col in ['投資', '回収枚数', '収支']:
                 if col in df.columns:
                     df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
             return df
-        except Exception: return pd.DataFrame()
+        except Exception:
+            return pd.DataFrame()
     return pd.DataFrame()
 
+# --- 3. 画面構成とデザイン ---
 st.set_page_config(page_title="5.5スロ収支Pro", layout="wide")
 st.markdown("""<style>
     .stApp, [data-testid="stSidebar"] { background-color: #000000 !important; color: #ffffff !important; }
@@ -136,6 +110,7 @@ st.markdown("""<style>
     }
 </style>""", unsafe_allow_html=True)
 
+# サイドバー (設定推測)
 with st.sidebar:
     st.header("🎰 設定推測")
     target_model = st.selectbox("機種を選択", ["選択なし"] + sorted(list(SPEC_DATA.keys())))
@@ -153,11 +128,13 @@ with st.sidebar:
                 if val == 0: continue
                 if abs(gassan - val) < best_diff:
                     best_diff, likely = abs(gassan - val), i + 1
-            st.success(f"推定: **設定{likely}**")
+            st.success(f"推定: **設定{likely}** 付近")
 
+# メイン画面
 st.title("🎰 5.5スロ収支表")
 df = load_data()
 
+# 記録入力
 with st.form("input_form", clear_on_submit=True):
     st.write("### 📝 稼働を記録")
     c1, c2 = st.columns(2)
@@ -175,10 +152,22 @@ with st.form("input_form", clear_on_submit=True):
             st.cache_data.clear()
             st.rerun()
 
+# 履歴表示
 if not df.empty:
     st.divider()
-    st.markdown(f"## 累計: {int(df['収支'].sum()):,} 円")
+    total = df['収支'].sum()
+    st.markdown(f"## 累計: {int(total):,} 円")
     st.line_chart(df['収支'].cumsum())
+    st.write("### 📝 履歴一覧")
     st.dataframe(df.iloc[::-1], use_container_width=True, hide_index=True)
+    with st.expander("データ削除"):
+        sheet = get_spreadsheet()
+        for i, row in df.iterrows():
+            ca, cb = st.columns([0.8, 0.2])
+            ca.write(f"【{row['日付']}】{row['機種名']}")
+            if cb.button("削除", key=f"del_{i}"):
+                sheet.delete_rows(i + 2)
+                st.cache_data.clear()
+                st.rerun()
 else:
-    st.info("データが読み込めませんでした。")
+    st.info("データが読み込めません。credentials.json を GitHub に Push したか確認してください。")
