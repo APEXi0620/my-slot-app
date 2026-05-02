@@ -8,7 +8,6 @@ import os
 # --- 1. 基本設定 ---
 SLOT_TANKA = 5.5
 
-# 全機種スペックデータ (一切の省略なし)
 SPEC_DATA = {
     "ミスタージャグラー": [163.8, 159.1, 153.8, 142.5, 131.6, 118.7],
     "アイムジャグラーEX": [168.5, 159.1, 150.3, 140.9, 135.4, 127.5],
@@ -59,17 +58,42 @@ SPEC_DATA = {
     "甲鉄城のカバネリ": [407.9, 404.5, 362.4, 313.2, 290.6, 245.1],
 }
 
-# --- 2. Google Sheets 接続関数 (認証情報を直接埋め込み) ---
 def get_spreadsheet():
     try:
         scopes = ['https://googleapis.com', 'https://googleapis.com']
         
-        # 認証情報を直接辞書として定義
         info = {
             "type": "service_account",
             "project_id": "erudite-flag-495006-f8",
             "private_key_id": "8df99c3209a691c6a4f6ad095d7867c33161f84b",
-            "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDl6FW/MI/SOzVN\n6oUOLGNF6QAHEj7y09iGMkg1z/iY1r2BzvSNlCHFELsUBuX6lykABWj5YMCijpTY\nf5tZiPMcjCjnxEh0as60UehoKEfiGFen0P7fMXwY60OhZw+YJ+RxttzE7l9ZG6Iw\nuhQfZkrajP1Gh7PpCEethweqFaJqbh0sB4GzCU5b37HZXObvjlOVFbVd+egDiW2g\nsjff5zr+qyhly4n57dK7sy1yu9hcLC/rnkdnv9dUYcyvRKAJQ9a/jyD3KTSNOD/h\nJU5jehNbRF+fmSzU+KhAQYcYsSXbDm4Ynofw74nZkbIf2WqSN//fe52kMHiLIfXy\nddAbum4tAgMBAAECggEAB5RDs2RV8W/LP5DSJxf2g9j9C76hvZ6XPkFNGR0MjHlT\n0QIyFLLD9DurdysNDNhL3TjQb5wtbY52wLZgODDoFtJWDOHvI4tb2hzzJO/jAsSb\nqygcJt56QVYMKjd8D5+NC+Sj3YggM49SJvoTbL+SCydnuBoEJ9QCjOltKsHA03JS\n2313Pahi6jDZC9By+7F1uA1ITZFV1Z3YJATRuAvPirW5vbYxpncW15HD3pO8Stf0\nPZgcebQx6qrvhIe9/lYwFzFoSmwyAsp9okLIn4Zyj4+aQhtmnPBOnvoGysRJyTPc\n5tjSLqjXYZ63hz5mvIpoBSUCC4MRRbyGqbxlHfcnXwKBgQD2cPL3fgNERrK6Hho+\nJz7q6hGvbyMJqw3I8NKinChFwBm7nohtFMHkH5qoCb+kgGGtbJ0cpDJ1TXzD3mHe\nRJwXNQwe0nJD8geqBDSOPEjezfchmS2m6nHZk63MvXIhIIlwQg81ytyWrj7HXc5F\ijsOOWyBARrOEOgFc6xsn/YIdwKBgQDu0zbQ0CwvVsnhjfAnfeeP0/RH80QwK2A9\nyzC4pnIL/gSapFCjIHKxr8Cq0A9attoU068ajXDfHEzAXNop2m+muzY6YzhmNdIJ\n1gS65yOv5nJpIYkeq47bjlgngt82UXWidOWUNbZI9hwY6jhpHHhYX9mIC/7DcWwx\nCrfAOCLLewKBgQDhFwskeIldTEGkcyg/CrOR9xcOKLFU/FKL7UJGWeECzFH0pvku\nwJ3T0fX9c2ICS2xr7V+XMHYR5COH909mpz32iHI4mLjbTG4poMur+m4IaxFFM9aZ\ntVslgphk/8gFb+V4ji28UTynuCEJEan8pCQKevKa5bpo6tIxYJTlZjlfQwKBgGzV\n4EMkux4PpQyfDHRS0jYfV1F6sPZqrf87G8bqQ0rnxd1bSEwuu1XyTBELpBOpBJU9\nKq0lC+0BDpETP3CXVQ5cfof5M3iQylklKR6ruv2sPTNfzwclE4NGyTGoWGR+lucj\n8oOqPpndXkyUYIS2LrnHZHC1VrJme/GVesukSWcFAoGBAJaL/SlOSeNUqNnvJeHe\nnArCxQuXXXWe8gQJIgJxSuFNFeK6r8TF2povPHQLJ+seXpKNAtTDOEUsEvTMVt6i\n5JkhspGM531n4WBJhvMHE5VdGPhb4qCmeSqItdOsn6ImMqH9ODX8b86e8hQpClB9\nKjVSq6PT++8RYexdGLj8VKWx\n-----END PRIVATE KEY-----\n",
+            "private_key": """-----BEGIN PRIVATE KEY-----
+MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDl6FW/MI/SOzVN
+6oUOLGNF6QAHEj7y09iGMkg1z/iY1r2BzvSNlCHFELsUBuX6lykABWj5YMCijpTY
+f5tZiPMcjCjnxEh0as60UehoKEfiGFen0P7fMXwY60OhZw+YJ+RxttzE7l9ZG6Iw
+uhQfZkrajP1Gh7PpCEethweqFaJqbh0sB4GzCU5b37HZXObvjlOVFbVd+egDiW2g
+sjff5zr+qyhly4n57dK7sy1yu9hcLC/rnkdnv9dUYcyvRKAJQ9a/jyD3KTSNOD/h
+JU5jehNbRF+fmSzU+KhAQYcYsSXbDm4Ynofw74nZkbIf2WqSN//fe52kMHiLIfXy
+ddAbum4tAgMBAAECggEAB5RDs2RV8W/LP5DSJxf2g9j9C76hvZ6XPkFNGR0MjHlT
+0QIyFLLD9DurdysNDNhL3TjQb5wtbY52wLZgODDoFtJWDOHvI4tb2hzzJO/jAsSb
+qygcJt56QVYMKjd8D5+NC+Sj3YggM49SJvoTbL+SCydnuBoEJ9QCjOltKsHA03JS
+2313Pahi6jDZC9By+7F1uA1ITZFV1Z3YJATRuAvPirW5vbYxpncW15HD3pO8Stf0
+PZgcebQx6qrvhIe9/lYwFzFoSmwyAsp9okLIn4Zyj4+aQhtmnPBOnvoGysRJyTPc
+5tjSLqjXYZ63hz5mvIpoBSUCC4MRRbyGqbxlHfcnXwKBgQD2cPL3fgNERrK6Hho+
+Jz7q6hGvbyMJqw3I8NKinChFwBm7nohtFMHkH5qoCb+kgGGtbJ0cpDJ1TXzD3mHe
+RJwXNQwe0nJD8geqBDSOPEjezfchmS2m6nHZk63MvXIhIIlwQg81ytyWrj7HXc5F
+ijsOOWyBARrOEOgFc6xsn/YIdwKBgQDu0zbQ0CwvVsnhjfAnfeeP0/RH80QwK2A9
+yzC4pnIL/gSapFCjIHKxr8Cq0A9attoU068ajXDfHEzAXNop2m+muzY6YzhmNdIJ
+1gS65yOv5nJpIYkeq47bjlgngt82UXWidOWUNbZI9hwY6jhpHHhYX9mIC/7DcWwx
+CrfAOCLLewKBgQDhFwskeIldTEGkcyg/CrOR9xcOKLFU/FKL7UJGWeECzFH0pvku
+wJ3T0fX9c2ICS2xr7V+XMHYR5COH909mpz32iHI4mLjbTG4poMur+m4IaxFFM9aZ
+ntVslgphk/8gFb+V4ji28UTynuCEJEan8pCQKevKa5bpo6tIxYJTlZjlfQwKBgGzV
+4EMkux4PpQyfDHRS0jYfV1F6sPZqrf87G8bqQ0rnxd1bSEwuu1XyTBELpBOpBJU9
+Kq0lC+0BDpETP3CXVQ5cfof5M3iQylklKR6ruv2sPTNfzwclE4NGyTGoWGR+lucj
+8oOqPpndXkyUYIS2LrnHZHC1VrJme/GVesukSWcFAoGBAJaL/SlOSeNUqNnvJeHe
+nnArCxQuXXXWe8gQJIgJxSuFNFeK6r8TF2povPHQLJ+seXpKNAtTDOEUsEvTMVt6i
+5JkhspGM531n4WBJhvMHE5VdGPhb4qCmeSqItdOsn6ImMqH9ODX8b86e8hQpClB9
+KjVSq6PT++8RYexdGLj8VKWx
+-----END PRIVATE KEY-----""",
             "client_email": "slot-bot@://gserviceaccount.com",
             "client_id": "114782345326931021263",
             "auth_uri": "https://google.com",
@@ -103,7 +127,7 @@ def load_data():
             return pd.DataFrame()
     return pd.DataFrame()
 
-# --- 3. 画面構成 ---
+# --- 3. デザイン ---
 st.set_page_config(page_title="5.5スロ収支Pro", layout="wide")
 st.markdown("""<style>
     .stApp, [data-testid="stSidebar"] { background-color: #000000 !important; color: #ffffff !important; }
@@ -124,7 +148,7 @@ with st.sidebar:
     with col2: s_reg = st.number_input("REG", min_value=0)
     if (s_big + s_reg) > 0:
         gassan = kaiten / (s_big + s_reg)
-        st.write(f"現在の合算: **1/{gassan:.1f}**")
+        st.write(f"合算: **1/{gassan:.1f}**")
         if target_model != "選択なし":
             specs = SPEC_DATA[target_model]
             best_diff, likely = 999, 1
@@ -132,7 +156,7 @@ with st.sidebar:
                 if val == 0: continue
                 if abs(gassan - val) < best_diff:
                     best_diff, likely = abs(gassan - val), i + 1
-            st.success(f"推定: **設定{likely}** 付近")
+            st.success(f"推定: **設定{likely}**")
 
 st.title("🎰 5.5スロ収支表")
 df = load_data()
@@ -158,14 +182,6 @@ if not df.empty:
     st.divider()
     st.markdown(f"## 累計: {int(df['収支'].sum()):,} 円")
     st.line_chart(df['収支'].cumsum())
-    st.write("### 📝 履歴一覧")
     st.dataframe(df.iloc[::-1], use_container_width=True, hide_index=True)
-    with st.expander("データ削除"):
-        sheet = get_spreadsheet()
-        for i, row in df.iterrows():
-            ca, cb = st.columns([0.8, 0.2])
-            ca.write(f"【{row['日付']}】{row['機種名']}")
-            if cb.button("削除", key=f"del_{i}"):
-                sheet.delete_rows(i + 2)
-                st.cache_data.clear()
-                st.rerun()
+else:
+    st.info("データが読み込めませんでした。")
