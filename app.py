@@ -58,21 +58,30 @@ SPEC_DATA = {
     "ドルアーガの塔": [209.0, 198.0, 181.0, 163.0, 150.0, 135.0],
 }
 
+# --- 1. スプレッドシート接続 (環境自動判別 & エラー表示強化) ---
 def get_spreadsheet():
     try:
         scope = ['https://google.com', 'https://googleapis.com']
+        
+        # 自宅・職場PC用 (credentials.json)
         if os.path.exists('credentials.json'):
             creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
+        # iPhone / Streamlit Cloud用 (Secrets)
         elif "gcp_service_account" in st.secrets:
             creds_dict = dict(st.secrets["gcp_service_account"])
             creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict)
         else:
+            st.error("【エラー】認証ファイル(credentials.json)またはSecretsが見つかりません。")
             return None
+        
         client = gspread.authorize(creds)
+        # 指定のURLを確実に指定
         url = "https://google.com"
         return client.open_by_url(url).sheet1
+        
     except Exception as e:
-        st.error(f"接続失敗: {e}")
+        # 赤い箱に本当の理由を出す
+        st.error(f"【デバッグ】接続失敗の本当の理由: {e}")
         return None
 
 def load_data():
@@ -88,26 +97,49 @@ def load_data():
                     df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
             return df
         except Exception as e:
-            st.error(f"読み込み失敗: {e}")
+            st.error(f"【デバッグ】読み込み失敗の理由: {e}")
     return pd.DataFrame(columns=['日付', '機種名', '投資', '回収枚数', '収支', '備考'])
 
+# --- 2. 画面構成 ---
 st.set_page_config(page_title="5.5スロ収支Pro", layout="wide")
-st.markdown("<style>.stApp, [data-testid='stSidebar'] { background-color: #000; color: #fff; } input, select, textarea { background-color: #fff !important; color: #000 !important; } label, p, h1, h2, h3 { color: #fff; } div.stForm [data-testid='stFormSubmitButton'] button { background-color: #00f !important; color: #fff !important; font-weight: bold !important; width: 100% !important; }</style>", unsafe_allow_html=True)
 
+# デザイン
+st.markdown("""<style>
+    .stApp, [data-testid="stSidebar"] { background-color: #000 !important; color: #fff !important; }
+    input, select, textarea { background-color: #fff !important; color: #000 !important; }
+    label, p, h1, h2, h3 { color: #fff !important; }
+    div.stForm [data-testid="stFormSubmitButton"] button {
+        background-color: #00f !important; color: #fff !important;
+        font-weight: bold !important; width: 100% !important;
+    }
+</style>""", unsafe_allow_html=True)
+
+# サイドバー
 with st.sidebar:
     st.header("🎰 設定推測")
-    target_model = st.selectbox("機種", ["選択なし"] + sorted(list(SPEC_DATA.keys())))
+    target_model = st.selectbox("機種を選択", ["選択なし"] + sorted(list(SPEC_DATA.keys())))
     kaiten = st.number_input("回転数", min_value=1, value=1000)
-    col1, col2 = st.columns(2)
-    with col1: s_big = st.number_input("BIG", min_value=0)
-    with col2: s_reg = st.number_input("REG", min_value=0)
+    cb, cr = st.columns(2)
+    with cb: s_big = st.number_input("BIG", min_value=0)
+    with cr: s_reg = st.number_input("REG", min_value=0)
     if (s_big + s_reg) > 0:
         gassan = kaiten / (s_big + s_reg)
-        st.write(f"合算: 1/{gassan:.1f}")
+        st.write(f"合算: **1/{gassan:.1f}**")
+        if target_model != "選択なし":
+            specs = SPEC_DATA[target_model]
+            best_diff, likely_setting = 999, 1
+            for i, val in enumerate(specs):
+                if val == 0: continue
+                diff = abs(gassan - val)
+                if diff < best_diff:
+                    best_diff, likely_setting = diff, i + 1
+            st.success(f"推定設定: **設定{likely_setting}** 付近")
 
+# メイン
 st.title("🎰 5.5スロ収支表")
 df = load_data()
 
+# 記録
 with st.form("input_form", clear_on_submit=True):
     st.write("### 📝 記録入力")
     c1, c2 = st.columns(2)
@@ -124,19 +156,21 @@ with st.form("input_form", clear_on_submit=True):
             sheet.append_row([date.strftime("%m/%d"), name, toushi, maisuu, shuushi, memo])
             st.rerun()
 
+# 一覧
 if not df.empty:
     st.divider()
     total = df['収支'].sum()
-    st.markdown(f"## 累計: {int(total):,} 円")
+    st.markdown(f"## 累計トータル収支: {int(total):,} 円")
     st.line_chart(df['収支'].cumsum())
+    st.write("### 📝 履歴一覧")
     st.dataframe(df.iloc[::-1], use_container_width=True, hide_index=True)
     with st.expander("データ削除"):
         sheet = get_spreadsheet()
         for i, row in df.iterrows():
             col1, col2 = st.columns([0.8, 0.2])
-            col1.write(f"{row['日付']} {row['機種名']}")
+            col1.write(f"【{row['日付']}】{row['機種名']}")
             if col2.button("削除", key=f"del_{i}"):
                 sheet.delete_rows(i + 2)
                 st.rerun()
 else:
-    st.info("データが読み込めませんでした。URLと共有設定を確認してください。")
+    st.info("データが読み込めません。上のデバッグ情報を確認してください。")
