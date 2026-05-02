@@ -1,14 +1,14 @@
 import streamlit as st
 import pandas as pd
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
 from datetime import datetime
 import os
 
-# --- 設定 ---
+# --- 1. 基本設定 ---
 SLOT_TANKA = 5.5
 
-# 機種データ (スペック)
+# 全機種スペックデータ
 SPEC_DATA = {
     "ミスタージャグラー": [163.8, 159.1, 153.8, 142.5, 131.6, 118.7],
     "アイムジャグラーEX": [168.5, 159.1, 150.3, 140.9, 135.4, 127.5],
@@ -56,34 +56,35 @@ SPEC_DATA = {
     "バイオハザード5ZE": [310.0, 295.0, 281.0, 252.0, 226.0, 193.0],
     "ルパン三世大航海者の秘宝": [188.3, 183.1, 176.2, 163.8, 149.6, 131.6],
     "ドルアーガの塔": [209.0, 198.0, 181.0, 163.0, 150.0, 135.0],
+    "甲鉄城のカバネリ": [407.9, 404.5, 362.4, 313.2, 290.6, 245.1],
 }
 
-# --- 1. スプレッドシート接続 (環境自動判別 & エラー表示強化) ---
+# --- 2. Google Sheets 接続関数 ---
 def get_spreadsheet():
     try:
-        scope = ['https://google.com', 'https://googleapis.com']
+        # スコープを完全なURLに修正
+        scopes = [
+            'https://googleapis.com',
+            'https://googleapis.com'
+        ]
         
-        # 自宅・職場PC用 (credentials.json)
         if os.path.exists('credentials.json'):
-            creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
-        # iPhone / Streamlit Cloud用 (Secrets)
+            creds = Credentials.from_service_account_file('credentials.json', scopes=scopes)
         elif "gcp_service_account" in st.secrets:
-            creds_dict = dict(st.secrets["gcp_service_account"])
-            creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict)
+            info = dict(st.secrets["gcp_service_account"])
+            creds = Credentials.from_service_account_info(info, scopes=scopes)
         else:
-            st.error("【エラー】認証ファイル(credentials.json)またはSecretsが見つかりません。")
+            st.error("【エラー】認証情報が見つかりません。")
             return None
         
         client = gspread.authorize(creds)
-        # 指定のURLを確実に指定
-        url = "https://google.com"
-        return client.open_by_url(url).sheet1
-        
+        return client.open("55slot_data").sheet1
     except Exception as e:
-        # 赤い箱に本当の理由を出す
-        st.error(f"【デバッグ】接続失敗の本当の理由: {e}")
+        st.error(f"【接続エラー】: {e}")
         return None
 
+# 通信負荷を減らすためのキャッシュ設定
+@st.cache_data(ttl=60)
 def load_data():
     sheet = get_spreadsheet()
     if sheet:
@@ -92,56 +93,54 @@ def load_data():
             if not data:
                 return pd.DataFrame(columns=['日付', '機種名', '投資', '回収枚数', '収支', '備考'])
             df = pd.DataFrame(data)
+            # 数値型への強制変換
             for col in ['投資', '回収枚数', '収支']:
                 if col in df.columns:
                     df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
             return df
-        except Exception as e:
-            st.error(f"【デバッグ】読み込み失敗の理由: {e}")
-    return pd.DataFrame(columns=['日付', '機種名', '投資', '回収枚数', '収支', '備考'])
+        except Exception:
+            return pd.DataFrame()
+    return pd.DataFrame()
 
-# --- 2. 画面構成 ---
+# --- 3. 画面構成とデザイン ---
 st.set_page_config(page_title="5.5スロ収支Pro", layout="wide")
-
-# デザイン
 st.markdown("""<style>
-    .stApp, [data-testid="stSidebar"] { background-color: #000 !important; color: #fff !important; }
-    input, select, textarea { background-color: #fff !important; color: #000 !important; }
-    label, p, h1, h2, h3 { color: #fff !important; }
+    .stApp, [data-testid="stSidebar"] { background-color: #000000 !important; color: #ffffff !important; }
+    input, select, textarea { background-color: #ffffff !important; color: #000000 !important; }
+    label, p, h1, h2, h3 { color: #ffffff !important; }
     div.stForm [data-testid="stFormSubmitButton"] button {
-        background-color: #00f !important; color: #fff !important;
+        background-color: #0000ff !important; color: #ffffff !important;
         font-weight: bold !important; width: 100% !important;
     }
 </style>""", unsafe_allow_html=True)
 
-# サイドバー
+# サイドバー (設定推測)
 with st.sidebar:
     st.header("🎰 設定推測")
     target_model = st.selectbox("機種を選択", ["選択なし"] + sorted(list(SPEC_DATA.keys())))
-    kaiten = st.number_input("回転数", min_value=1, value=1000)
-    cb, cr = st.columns(2)
-    with cb: s_big = st.number_input("BIG", min_value=0)
-    with cr: s_reg = st.number_input("REG", min_value=0)
+    kaiten = st.number_input("総回転数", min_value=1, value=1000)
+    col1, col2 = st.columns(2)
+    with col1: s_big = st.number_input("BIG", min_value=0)
+    with col2: s_reg = st.number_input("REG", min_value=0)
     if (s_big + s_reg) > 0:
         gassan = kaiten / (s_big + s_reg)
-        st.write(f"合算: **1/{gassan:.1f}**")
+        st.write(f"現在の合算: **1/{gassan:.1f}**")
         if target_model != "選択なし":
             specs = SPEC_DATA[target_model]
-            best_diff, likely_setting = 999, 1
+            best_diff, likely = 999, 1
             for i, val in enumerate(specs):
                 if val == 0: continue
-                diff = abs(gassan - val)
-                if diff < best_diff:
-                    best_diff, likely_setting = diff, i + 1
-            st.success(f"推定設定: **設定{likely_setting}** 付近")
+                if abs(gassan - val) < best_diff:
+                    best_diff, likely = abs(gassan - val), i + 1
+            st.success(f"推定: **設定{likely}** 付近")
 
-# メイン
+# メイン画面
 st.title("🎰 5.5スロ収支表")
 df = load_data()
 
 # 記録
 with st.form("input_form", clear_on_submit=True):
-    st.write("### 📝 記録入力")
+    st.write("### 📝 稼働を記録")
     c1, c2 = st.columns(2)
     with c1: date = st.date_input("日付", datetime.now())
     with c2: name = st.selectbox("機種名", sorted(list(SPEC_DATA.keys())) + ["その他"])
@@ -154,30 +153,33 @@ with st.form("input_form", clear_on_submit=True):
         if sheet:
             shuushi = int(maisuu * SLOT_TANKA) - toushi
             sheet.append_row([date.strftime("%m/%d"), name, toushi, maisuu, shuushi, memo])
+            st.cache_data.clear() # キャッシュを消して即時反映
             st.rerun()
 
-# 一覧
+# 履歴表示
 if not df.empty:
     st.divider()
     total = df['収支'].sum()
-    st.markdown(f"## 累計トータル収支: {int(total):,} 円")
+    st.markdown(f"## 累計: {int(total):,} 円")
     st.line_chart(df['収支'].cumsum())
+    
     st.write("### 📝 履歴一覧")
-    st.dataframe(df.iloc[::-1], use_container_width=True, hide_index=True)
+    # インデックスを保持したまま表示用DFを作成
+    display_df = df.copy()
+    display_df['削除'] = False
+    
+    st.dataframe(display_df.iloc[::-1], use_container_width=True, hide_index=True)
+    
     with st.expander("データ削除"):
+        # 削除はインデックスがズレないよう注意が必要
         sheet = get_spreadsheet()
         for i, row in df.iterrows():
-<<<<<<< HEAD
-            col1, col2 = st.columns([0.8, 0.2])
-            col1.write(f"【{row['日付']}】{row['機種名']}")
-            if col2.button("削除", key=f"del_{i}"):
-=======
-            c1, c2 = st.columns()
-            c1.write(f"【{row['日付']}】{row['機種名']} ({row['収支']}円)")
-            if c2.button("削除", key=f"del_{i}"):
-                # ヘッダーがあるため i+2 行目を削除
->>>>>>> parent of 94d995c (修正)
+            ca, cb = st.columns([0.8, 0.2])
+            ca.write(f"【{row['日付']}】{row['機種名']} ({row['収支']}円)")
+            if cb.button("削除", key=f"del_{i}"):
+                # シートの行番号は i + 2 (ヘッダー+0始まり)
                 sheet.delete_rows(i + 2)
+                st.cache_data.clear()
                 st.rerun()
 else:
-    st.info("データが読み込めません。上のデバッグ情報を確認してください。")
+    st.info("データが読み込めません。共有設定と credentials.json を確認してください。")
