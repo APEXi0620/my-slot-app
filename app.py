@@ -167,9 +167,16 @@ if not df.empty:
     with st.expander("データ削除"):
         sheet = get_spreadsheet()
         for i, row in df.iterrows():
+<<<<<<< HEAD
             col1, col2 = st.columns([0.8, 0.2])
             col1.write(f"【{row['日付']}】{row['機種名']}")
             if col2.button("削除", key=f"del_{i}"):
+=======
+            c1, c2 = st.columns()
+            c1.write(f"【{row['日付']}】{row['機種名']} ({row['収支']}円)")
+            if c2.button("削除", key=f"del_{i}"):
+                # ヘッダーがあるため i+2 行目を削除
+>>>>>>> parent of 94d995c (修正)
                 sheet.delete_rows(i + 2)
                 st.rerun()
 else:
