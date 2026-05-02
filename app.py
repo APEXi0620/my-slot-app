@@ -8,6 +8,7 @@ import os
 # --- 1. 基本設定 ---
 SLOT_TANKA = 5.5
 
+# 全機種スペックデータ (一切の省略なし)
 SPEC_DATA = {
     "ミスタージャグラー": [163.8, 159.1, 153.8, 142.5, 131.6, 118.7],
     "アイムジャグラーEX": [168.5, 159.1, 150.3, 140.9, 135.4, 127.5],
@@ -58,23 +59,29 @@ SPEC_DATA = {
     "甲鉄城のカバネリ": [407.9, 404.5, 362.4, 313.2, 290.6, 245.1],
 }
 
+# --- 2. Google Sheets 接続関数 ---
 def get_spreadsheet():
     try:
+        # スコープを完全なURL形式に設定
         scopes = [
             'https://googleapis.com',
             'https://googleapis.com'
         ]
+        
         if os.path.exists('credentials.json'):
             creds = Credentials.from_service_account_file('credentials.json', scopes=scopes)
         elif "gcp_service_account" in st.secrets:
+            # Secretsから情報を取得し、認証オブジェクトを作成
             info = dict(st.secrets["gcp_service_account"])
             creds = Credentials.from_service_account_info(info, scopes=scopes)
         else:
+            st.error("【エラー】認証情報が見つかりません。")
             return None
+        
         client = gspread.authorize(creds)
         return client.open("55slot_data").sheet1
     except Exception as e:
-        st.error(f"接続失敗: {e}")
+        st.error(f"【接続エラー】: {e}")
         return None
 
 @st.cache_data(ttl=60)
@@ -86,6 +93,7 @@ def load_data():
             if not data:
                 return pd.DataFrame(columns=['日付', '機種名', '投資', '回収枚数', '収支', '備考'])
             df = pd.DataFrame(data)
+            # 数値型への強制変換と欠損値処理
             for col in ['投資', '回収枚数', '収支']:
                 if col in df.columns:
                     df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
@@ -94,64 +102,100 @@ def load_data():
             return pd.DataFrame()
     return pd.DataFrame()
 
+# --- 3. 画面構成とデザイン ---
 st.set_page_config(page_title="5.5スロ収支Pro", layout="wide")
 st.markdown("""<style>
-    .stApp { background-color: #000; color: #fff; }
-    input, select, textarea { background-color: #fff !important; color: #000 !important; }
+    /* アプリ全体の黒背景と白文字設定 */
+    .stApp, [data-testid="stSidebar"] { 
+        background-color: #000000 !important; 
+        color: #ffffff !important; 
+    }
+    /* 入力フォームの背景白・文字黒設定 */
+    input, select, textarea { 
+        background-color: #ffffff !important; 
+        color: #000000 !important; 
+    }
+    /* ラベルやヘッダーの白文字設定 */
+    label, p, h1, h2, h3 { 
+        color: #ffffff !important; 
+    }
+    /* 送信ボタンの青背景・白文字・太字設定 */
     div.stForm [data-testid="stFormSubmitButton"] button {
-        background-color: #00f !important; color: #fff !important; width: 100%;
+        background-color: #0000ff !important; 
+        color: #ffffff !important;
+        font-weight: bold !important; 
+        width: 100% !important;
     }
 </style>""", unsafe_allow_html=True)
 
+# サイドバー (設定推測機能)
 with st.sidebar:
     st.header("🎰 設定推測")
-    target_model = st.selectbox("機種", ["選択なし"] + sorted(list(SPEC_DATA.keys())))
-    kaiten = st.number_input("回転数", min_value=1, value=1000)
-    c1, c2 = st.columns(2)
-    with c1: b = st.number_input("BIG", min_value=0)
-    with c2: r = st.number_input("REG", min_value=0)
-    if (b + r) > 0:
-        g = kaiten / (b + r)
-        st.write(f"合算: 1/{g:.1f}")
+    target_model = st.selectbox("機種を選択", ["選択なし"] + sorted(list(SPEC_DATA.keys())))
+    kaiten = st.number_input("総回転数", min_value=1, value=1000)
+    col1, col2 = st.columns(2)
+    with col1: s_big = st.number_input("BIG", min_value=0)
+    with col2: s_reg = st.number_input("REG", min_value=0)
+    
+    if (s_big + s_reg) > 0:
+        gassan = kaiten / (s_big + s_reg)
+        st.write(f"現在の合算: **1/{gassan:.1f}**")
         if target_model != "選択なし":
             specs = SPEC_DATA[target_model]
             best_diff, likely = 999, 1
             for i, val in enumerate(specs):
                 if val == 0: continue
-                if abs(g - val) < best_diff:
-                    best_diff, likely = abs(g - val), i + 1
-            st.success(f"推定: 設定{likely}")
+                if abs(gassan - val) < best_diff:
+                    best_diff, likely = abs(gassan - val), i + 1
+            st.success(f"推定: **設定{likely}** 付近")
 
+# メイン画面表示
 st.title("🎰 5.5スロ収支表")
 df = load_data()
 
+# 稼働記録入力フォーム
 with st.form("input_form", clear_on_submit=True):
+    st.write("### 📝 稼働を記録")
     c1, c2 = st.columns(2)
     with c1: date = st.date_input("日付", datetime.now())
     with c2: name = st.selectbox("機種名", sorted(list(SPEC_DATA.keys())) + ["その他"])
+    
     c3, c4 = st.columns(2)
     with c3: toushi = st.number_input("投資(円)", min_value=0, step=500)
     with c4: maisuu = st.number_input("回収(枚)", min_value=0, step=10)
+    
     memo = st.text_area("備考")
+    
     if st.form_submit_button("記録する"):
         sheet = get_spreadsheet()
         if sheet:
             shuushi = int(maisuu * SLOT_TANKA) - toushi
+            # スプレッドシートに1行追加
             sheet.append_row([date.strftime("%m/%d"), name, toushi, maisuu, shuushi, memo])
+            # キャッシュをクリアして画面を更新
             st.cache_data.clear()
             st.rerun()
 
+# 履歴および統計表示
 if not df.empty:
     st.divider()
-    st.markdown(f"## 累計: {int(df['収支'].sum()):,} 円")
+    total = df['収支'].sum()
+    st.markdown(f"## 累計: {int(total):,} 円")
     st.line_chart(df['収支'].cumsum())
+    
+    st.write("### 📝 履歴一覧")
     st.dataframe(df.iloc[::-1], use_container_width=True, hide_index=True)
+    
+    # 削除機能 (エクスパンダー内)
     with st.expander("データ削除"):
         sheet = get_spreadsheet()
         for i, row in df.iterrows():
             ca, cb = st.columns([0.8, 0.2])
-            ca.write(f"{row['日付']} {row['機種名']}")
+            ca.write(f"【{row['日付']}】{row['機種名']} ({row['収支']}円)")
             if cb.button("削除", key=f"del_{i}"):
+                # 行番号は i+2 (1始まり＋ヘッダー分)
                 sheet.delete_rows(i + 2)
                 st.cache_data.clear()
                 st.rerun()
+else:
+    st.info("データが読み込めません。共有設定とSecretsの設定を確認してください。")
