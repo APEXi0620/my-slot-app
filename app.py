@@ -61,12 +61,39 @@ SPEC_DATA = {
 def get_spreadsheet():
     try:
         scopes = ['https://googleapis.com', 'https://googleapis.com']
-        # 鍵をプログラム内に直接記述
+        
         info = {
             "type": "service_account",
             "project_id": "erudite-flag-495006-f8",
             "private_key_id": "8df99c3209a691c6a4f6ad095d7867c33161f84b",
-            "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDl6FW/MI/SOzVN\n6oUOLGNF6QAHEj7y09iGMkg1z/iY1r2BzvSNlCHFELsUBuX6lykABWj5YMCijpTY\nf5tZiPMcjCjnxEh0as60UehoKEfiGFen0P7fMXwY60OhZw+YJ+RxttzE7l9ZG6Iw\nuhQfZkrajP1Gh7PpCEethweqFaJqbh0sB4GzCU5b37HZXObvjlOVFbVd+egDiW2g\nsjff5zr+qyhly4n57dK7sy1yu9hcLC/rnkdnv9dUYcyvRKAJQ9a/jyD3KTSNOD/h\nJU5jehNbRF+fmSzU+KhAQYcYsSXbDm4Ynofw74nZkbIf2WqSN//fe52kMHiLIfXy\nddAbum4tAgMBAAECggEAB5RDs2RV8W/LP5DSJxf2g9j9C76hvZ6XPkFNGR0MjHlT\n0QIyFLLD9DurdysNDNhL3TjQb5wtbY52wLZgODDoFtJWDOHvI4tb2hzzJO/jAsSb\nqygcJt56QVYMKjd8D5+NC+Sj3YggM49SJvoTbL+SCydnuBoEJ9QCjOltKsHA03JS\n2313Pahi6jDZC9By+7F1uA1ITZFV1Z3YJATRuAvPirW5vbYxpncW15HD3pO8Stf0\nPZgcebQx6qrvhIe9/lYwFzFoSmwyAsp9okLIn4Zyj4+aQhtmnPBOnvoGysRJyTPc\n5tjSLqjXYZ63hz5mvIpoBSUCC4MRRbyGqbxlHfcnXwKBgQD2cPL3fgNERrK6Hho+\nJz7q6hGvbyMJqw3I8NKinChFwBm7nohtFMHkH5qoCb+kgGGtbJ0cpDJ1TXzD3mHe\ RJwXNQwe0nJD8geqBDSOPEjezfchmS2m6nHZk63MvXIhIIlwQg81ytyWrj7HXc5F\ijsOOWyBARrOEOgFc6xsn/YIdwKBgQDu0zbQ0CwvVsnhjfAnfeeP0/RH80QwK2A9\nyzC4pnIL/gSapFCjIHKxr8Cq0A9attoU068ajXDfHEzAXNop2m+muzY6YzhmNdIJ\ 1gS65yOv5nJpIYkeq47bjlgngt82UXWidOWUNbZI9hwY6jhpHHhYX9mIC/7DcWwx\CrfAOCLLewKBgQDhFwskeIldTEGkcyg/CrOR9xcOKLFU/FKL7UJGWeECzFH0pvku\nwJ3T0fX9c2ICS2xr7V+XMHYR5COH909mpz32iHI4mLjbTG4poMur+m4IaxFFM9aZ\ntVslgphk/8gFb+V4ji28UTynuCEJEan8pCQKevKa5bpo6tIxYJTlZjlfQwKBgGzV\n4EMkux4PpQyfDHRS0jYfV1F6sPZqrf87G8bqQ0rnxd1bSEwuu1XyTBELpBOpBJU9\Kq0lC+0BDpETP3CXVQ5cfof5M3iQylklKR6ruv2sPTNfzwclE4NGyTGoWGR+lucj\n8oOqPpndXkyUYIS2LrnHZHC1VrJme/GVesukSWcFAoGBAJaL/SlOSeNUqNnvJeHe\nnArCxQuXXXWe8gQJIgJxSuFNFeK6r8TF2povPHQLJ+seXpKNAtTDOEUsEvTMVt6i\n5JkhspGM531n4WBJhvMHE5VdGPhb4qCmeSqItdOsn6ImMqH9ODX8b86e8hQpClB9\nKjVSq6PT++8RYexdGLj8VKWx\n-----END PRIVATE KEY-----\n",
+            "private_key": "-----BEGIN PRIVATE KEY-----\n" + 
+                           "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDl6FW/MI/SOzVN\n" +
+                           "6oUOLGNF6QAHEj7y09iGMkg1z/iY1r2BzvSNlCHFELsUBuX6lykABWj5YMCijpTY\n" +
+                           "f5tZiPMcjCjnxEh0as60UehoKEfiGFen0P7fMXwY60OhZw+YJ+RxttzE7l9ZG6Iw\n" +
+                           "uhQfZkrajP1Gh7PpCEethweqFaJqbh0sB4GzCU5b37HZXObvjlOVFbVd+egDiW2g\n" +
+                           "sjff5zr+qyhly4n57dK7sy1yu9hcLC/rnkdnv9dUYcyvRKAJQ9a/jyD3KTSNOD/h\n" +
+                           "JU5jehNbRF+fmSzU+KhAQYcYsSXbDm4Ynofw74nZkbIf2WqSN//fe52kMHiLIfXy\n" +
+                           "ddAbum4tAgMBAAECggEAB5RDs2RV8W/LP5DSJxf2g9j9C76hvZ6XPkFNGR0MjHlT\n" +
+                           "0QIyFLLD9DurdysNDNhL3TjQb5wtbY52wLZgODDoFtJWDOHvI4tb2hzzJO/jAsSb\n" +
+                           "qygcJt56QVYMKjd8D5+NC+Sj3YggM49SJvoTbL+SCydnuBoEJ9QCjOltKsHA03JS\n" +
+                           "2313Pahi6jDZC9By+7F1uA1ITZFV1Z3YJATRuAvPirW5vbYxpncW15HD3pO8Stf0\n" +
+                           "PZgcebQx6qrvhIe9/lYwFzFoSmwyAsp9okLIn4Zyj4+aQhtmnPBOnvoGysRJyTPc\n" +
+                           "5tjSLqjXYZ63hz5mvIpoBSUCC4MRRbyGqbxlHfcnXwKBgQD2cPL3fgNERrK6Hho+\n" +
+                           "Jz7q6hGvbyMJqw3I8NKinChFwBm7nohtFMHkH5qoCb+kgGGtbJ0cpDJ1TXzD3mHe\n" +
+                           "RJwXNQwe0nJD8geqBDSOPEjezfchmS2m6nHZk63MvXIhIIlwQg81ytyWrj7HXc5F\n" +
+                           "ijsOOWyBARrOEOgFc6xsn/YIdwKBgQDu0zbQ0CwvVsnhjfAnfeeP0/RH80QwK2A9\n" +
+                           "yzC4pnIL/gSapFCjIHKxr8Cq0A9attoU068ajXDfHEzAXNop2m+muzY6YzhmNdIJ\n" +
+                           "1gS65yOv5nJpIYkeq47bjlgngt82UXWidOWUNbZI9hwY6jhpHHhYX9mIC/7DcWwx\n" +
+                           "CrfAOCLLewKBgQDhFwskeIldTEGkcyg/CrOR9xcOKLFU/FKL7UJGWeECzFH0pvku\n" +
+                           "wJ3T0fX9c2ICS2xr7V+XMHYR5COH909mpz32iHI4mLjbTG4poMur+m4IaxFFM9aZ\n" +
+                           "ntVslgphk/8gFb+V4ji28UTynuCEJEan8pCQKevKa5bpo6tIxYJTlZjlfQwKBgGzV\n" +
+                           "4EMkux4PpQyfDHRS0jYfV1F6sPZqrf87G8bqQ0rnxd1bSEwuu1XyTBELpBOpBJU9\n" +
+                           "Kq0lC+0BDpETP3CXVQ5cfof5M3iQylklKR6ruv2sPTNfzwclE4NGyTGoWGR+lucj\n" +
+                           "8oOqPpndXkyUYIS2LrnHZHC1VrJme/GVesukSWcFAoGBAJaL/SlOSeNUqNnvJeHe\n" +
+                           "nnArCxQuXXXWe8gQJIgJxSuFNFeK6r8TF2povPHQLJ+seXpKNAtTDOEUsEvTMVt6i\n" +
+                           "5JkhspGM531n4WBJhvMHE5VdGPhb4qCmeSqItdOsn6ImMqH9ODX8b86e8hQpClB9\n" +
+                           "KjVSq6PT++8RYexdGLj8VKWx\n" +
+                           "-----END PRIVATE KEY-----\n",
             "client_email": "slot-bot@://gserviceaccount.com",
             "client_id": "114782345326931021263",
             "auth_uri": "https://google.com",
@@ -75,6 +102,7 @@ def get_spreadsheet():
             "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/slot-bot@://gserviceaccount.com",
             "universe_domain": "googleapis.com"
         }
+        
         creds = Credentials.from_service_account_info(info, scopes=scopes)
         client = gspread.authorize(creds)
         return client.open("55slot_data").sheet1
@@ -125,7 +153,7 @@ with st.sidebar:
                 if val == 0: continue
                 if abs(gassan - val) < best_diff:
                     best_diff, likely = abs(gassan - val), i + 1
-            st.success(f"推定: **設定{likely}** 付近")
+            st.success(f"推定: **設定{likely}**")
 
 st.title("🎰 5.5スロ収支表")
 df = load_data()
@@ -153,4 +181,4 @@ if not df.empty:
     st.line_chart(df['収支'].cumsum())
     st.dataframe(df.iloc[::-1], use_container_width=True, hide_index=True)
 else:
-    st.info("データが読み込めません。")
+    st.info("データが読み込めませんでした。")
