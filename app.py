@@ -59,25 +59,27 @@ SPEC_DATA = {
     "甲鉄城のカバネリ": [407.9, 404.5, 362.4, 313.2, 290.6, 245.1],
 }
 
-# --- 2. Google Sheets 接続関数 ---
+# --- 2. Google Sheets 接続関数 (認証情報を直接埋め込み) ---
 def get_spreadsheet():
     try:
-        # スコープを完全なURL形式に設定
-        scopes = [
-            'https://googleapis.com',
-            'https://googleapis.com'
-        ]
+        scopes = ['https://googleapis.com', 'https://googleapis.com']
         
-        if os.path.exists('credentials.json'):
-            creds = Credentials.from_service_account_file('credentials.json', scopes=scopes)
-        elif "gcp_service_account" in st.secrets:
-            # Secretsから情報を取得し、認証オブジェクトを作成
-            info = dict(st.secrets["gcp_service_account"])
-            creds = Credentials.from_service_account_info(info, scopes=scopes)
-        else:
-            st.error("【エラー】認証情報が見つかりません。")
-            return None
+        # 認証情報を直接辞書として定義
+        info = {
+            "type": "service_account",
+            "project_id": "erudite-flag-495006-f8",
+            "private_key_id": "8df99c3209a691c6a4f6ad095d7867c33161f84b",
+            "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDl6FW/MI/SOzVN\n6oUOLGNF6QAHEj7y09iGMkg1z/iY1r2BzvSNlCHFELsUBuX6lykABWj5YMCijpTY\nf5tZiPMcjCjnxEh0as60UehoKEfiGFen0P7fMXwY60OhZw+YJ+RxttzE7l9ZG6Iw\nuhQfZkrajP1Gh7PpCEethweqFaJqbh0sB4GzCU5b37HZXObvjlOVFbVd+egDiW2g\nsjff5zr+qyhly4n57dK7sy1yu9hcLC/rnkdnv9dUYcyvRKAJQ9a/jyD3KTSNOD/h\nJU5jehNbRF+fmSzU+KhAQYcYsSXbDm4Ynofw74nZkbIf2WqSN//fe52kMHiLIfXy\nddAbum4tAgMBAAECggEAB5RDs2RV8W/LP5DSJxf2g9j9C76hvZ6XPkFNGR0MjHlT\n0QIyFLLD9DurdysNDNhL3TjQb5wtbY52wLZgODDoFtJWDOHvI4tb2hzzJO/jAsSb\nqygcJt56QVYMKjd8D5+NC+Sj3YggM49SJvoTbL+SCydnuBoEJ9QCjOltKsHA03JS\n2313Pahi6jDZC9By+7F1uA1ITZFV1Z3YJATRuAvPirW5vbYxpncW15HD3pO8Stf0\nPZgcebQx6qrvhIe9/lYwFzFoSmwyAsp9okLIn4Zyj4+aQhtmnPBOnvoGysRJyTPc\n5tjSLqjXYZ63hz5mvIpoBSUCC4MRRbyGqbxlHfcnXwKBgQD2cPL3fgNERrK6Hho+\nJz7q6hGvbyMJqw3I8NKinChFwBm7nohtFMHkH5qoCb+kgGGtbJ0cpDJ1TXzD3mHe\nRJwXNQwe0nJD8geqBDSOPEjezfchmS2m6nHZk63MvXIhIIlwQg81ytyWrj7HXc5F\ijsOOWyBARrOEOgFc6xsn/YIdwKBgQDu0zbQ0CwvVsnhjfAnfeeP0/RH80QwK2A9\nyzC4pnIL/gSapFCjIHKxr8Cq0A9attoU068ajXDfHEzAXNop2m+muzY6YzhmNdIJ\n1gS65yOv5nJpIYkeq47bjlgngt82UXWidOWUNbZI9hwY6jhpHHhYX9mIC/7DcWwx\nCrfAOCLLewKBgQDhFwskeIldTEGkcyg/CrOR9xcOKLFU/FKL7UJGWeECzFH0pvku\nwJ3T0fX9c2ICS2xr7V+XMHYR5COH909mpz32iHI4mLjbTG4poMur+m4IaxFFM9aZ\ntVslgphk/8gFb+V4ji28UTynuCEJEan8pCQKevKa5bpo6tIxYJTlZjlfQwKBgGzV\n4EMkux4PpQyfDHRS0jYfV1F6sPZqrf87G8bqQ0rnxd1bSEwuu1XyTBELpBOpBJU9\nKq0lC+0BDpETP3CXVQ5cfof5M3iQylklKR6ruv2sPTNfzwclE4NGyTGoWGR+lucj\n8oOqPpndXkyUYIS2LrnHZHC1VrJme/GVesukSWcFAoGBAJaL/SlOSeNUqNnvJeHe\nnArCxQuXXXWe8gQJIgJxSuFNFeK6r8TF2povPHQLJ+seXpKNAtTDOEUsEvTMVt6i\n5JkhspGM531n4WBJhvMHE5VdGPhb4qCmeSqItdOsn6ImMqH9ODX8b86e8hQpClB9\nKjVSq6PT++8RYexdGLj8VKWx\n-----END PRIVATE KEY-----\n",
+            "client_email": "slot-bot@://gserviceaccount.com",
+            "client_id": "114782345326931021263",
+            "auth_uri": "https://google.com",
+            "token_uri": "https://googleapis.com",
+            "auth_provider_x509_cert_url": "https://googleapis.com",
+            "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/slot-bot@://gserviceaccount.com",
+            "universe_domain": "googleapis.com"
+        }
         
+        creds = Credentials.from_service_account_info(info, scopes=scopes)
         client = gspread.authorize(creds)
         return client.open("55slot_data").sheet1
     except Exception as e:
@@ -93,7 +95,6 @@ def load_data():
             if not data:
                 return pd.DataFrame(columns=['日付', '機種名', '投資', '回収枚数', '収支', '備考'])
             df = pd.DataFrame(data)
-            # 数値型への強制変換と欠損値処理
             for col in ['投資', '回収枚数', '収支']:
                 if col in df.columns:
                     df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
@@ -102,33 +103,18 @@ def load_data():
             return pd.DataFrame()
     return pd.DataFrame()
 
-# --- 3. 画面構成とデザイン ---
+# --- 3. 画面構成 ---
 st.set_page_config(page_title="5.5スロ収支Pro", layout="wide")
 st.markdown("""<style>
-    /* アプリ全体の黒背景と白文字設定 */
-    .stApp, [data-testid="stSidebar"] { 
-        background-color: #000000 !important; 
-        color: #ffffff !important; 
-    }
-    /* 入力フォームの背景白・文字黒設定 */
-    input, select, textarea { 
-        background-color: #ffffff !important; 
-        color: #000000 !important; 
-    }
-    /* ラベルやヘッダーの白文字設定 */
-    label, p, h1, h2, h3 { 
-        color: #ffffff !important; 
-    }
-    /* 送信ボタンの青背景・白文字・太字設定 */
+    .stApp, [data-testid="stSidebar"] { background-color: #000000 !important; color: #ffffff !important; }
+    input, select, textarea { background-color: #ffffff !important; color: #000000 !important; }
+    label, p, h1, h2, h3 { color: #ffffff !important; }
     div.stForm [data-testid="stFormSubmitButton"] button {
-        background-color: #0000ff !important; 
-        color: #ffffff !important;
-        font-weight: bold !important; 
-        width: 100% !important;
+        background-color: #0000ff !important; color: #ffffff !important;
+        font-weight: bold !important; width: 100% !important;
     }
 </style>""", unsafe_allow_html=True)
 
-# サイドバー (設定推測機能)
 with st.sidebar:
     st.header("🎰 設定推測")
     target_model = st.selectbox("機種を選択", ["選択なし"] + sorted(list(SPEC_DATA.keys())))
@@ -136,7 +122,6 @@ with st.sidebar:
     col1, col2 = st.columns(2)
     with col1: s_big = st.number_input("BIG", min_value=0)
     with col2: s_reg = st.number_input("REG", min_value=0)
-    
     if (s_big + s_reg) > 0:
         gassan = kaiten / (s_big + s_reg)
         st.write(f"現在の合算: **1/{gassan:.1f}**")
@@ -149,53 +134,38 @@ with st.sidebar:
                     best_diff, likely = abs(gassan - val), i + 1
             st.success(f"推定: **設定{likely}** 付近")
 
-# メイン画面表示
 st.title("🎰 5.5スロ収支表")
 df = load_data()
 
-# 稼働記録入力フォーム
 with st.form("input_form", clear_on_submit=True):
     st.write("### 📝 稼働を記録")
     c1, c2 = st.columns(2)
     with c1: date = st.date_input("日付", datetime.now())
     with c2: name = st.selectbox("機種名", sorted(list(SPEC_DATA.keys())) + ["その他"])
-    
     c3, c4 = st.columns(2)
     with c3: toushi = st.number_input("投資(円)", min_value=0, step=500)
     with c4: maisuu = st.number_input("回収(枚)", min_value=0, step=10)
-    
     memo = st.text_area("備考")
-    
     if st.form_submit_button("記録する"):
         sheet = get_spreadsheet()
         if sheet:
             shuushi = int(maisuu * SLOT_TANKA) - toushi
-            # スプレッドシートに1行追加
             sheet.append_row([date.strftime("%m/%d"), name, toushi, maisuu, shuushi, memo])
-            # キャッシュをクリアして画面を更新
             st.cache_data.clear()
             st.rerun()
 
-# 履歴および統計表示
 if not df.empty:
     st.divider()
-    total = df['収支'].sum()
-    st.markdown(f"## 累計: {int(total):,} 円")
+    st.markdown(f"## 累計: {int(df['収支'].sum()):,} 円")
     st.line_chart(df['収支'].cumsum())
-    
     st.write("### 📝 履歴一覧")
     st.dataframe(df.iloc[::-1], use_container_width=True, hide_index=True)
-    
-    # 削除機能 (エクスパンダー内)
     with st.expander("データ削除"):
         sheet = get_spreadsheet()
         for i, row in df.iterrows():
             ca, cb = st.columns([0.8, 0.2])
-            ca.write(f"【{row['日付']}】{row['機種名']} ({row['収支']}円)")
+            ca.write(f"【{row['日付']}】{row['機種名']}")
             if cb.button("削除", key=f"del_{i}"):
-                # 行番号は i+2 (1始まり＋ヘッダー分)
                 sheet.delete_rows(i + 2)
                 st.cache_data.clear()
                 st.rerun()
-else:
-    st.info("データが読み込めません。共有設定とSecretsの設定を確認してください。")
