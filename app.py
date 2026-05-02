@@ -60,17 +60,18 @@ SPEC_DATA = {
 # --- Google Sheets 接続関数 ---
 def get_spreadsheet():
     try:
-        # Secrets 優先
+        # 1. まずStreamlit CloudのSecretsを探す
         if "gcp_service_account" in st.secrets:
             creds_dict = dict(st.secrets["gcp_service_account"])
             creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict)
+        # 2. なければローカルの credentials.json を探す
         else:
             scope = ['https://google.com', 'https://googleapis.com']
+            # ここでファイルがプロジェクト直下にあることを確認
             creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
         
         client = gspread.authorize(creds)
-        # --- ここを実際のスプレッドシートのURLに書き換えてください ---
-        return client.open_by_url("https://docs.google.com/spreadsheets/d/1lx_MZivY0Bzdevh3w86Xq8gB5R99b4R0niR0YySx734/edit?gid=0#gid=0").sheet1
+        return client.open_by_url("https://google.com").sheet1
     except Exception as e:
         st.error(f"スプレッドシート接続失敗: {e}")
         return None
